@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap');
+
+/* 2. Tailwind directives */
+@import "tailwindcss";
+
+/* 3. Global styles */
+body {
+  font-family: 'Work Sans', sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.bg-primary { background-color: #6cee2b; }
+.text-primary { color: #6cee2b; }
+
+.bg-background-light { background-color: #f6f8f6; }
+.bg-background-dark { background-color: #162210; }
+.text-background-dark { color: #162210; }
+
+/* Custom border radius */
+.rounded { border-radius: 0.25rem; }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-xl { border-radius: 0.75rem; }
+.rounded-full { border-radius: 9999px; }
+
+/* Utility for display font (optional) */
+.font-display { font-family: 'Work Sans', sans-serif; }
