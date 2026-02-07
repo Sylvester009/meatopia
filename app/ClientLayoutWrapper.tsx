@@ -1,8 +1,8 @@
-// app/ClientLayoutWrapper.tsx - Client component
 "use client";
 
 import { usePathname } from 'next/navigation';
 import { CartProvider } from '@/context/CartContext'
+import { SearchProvider } from '@/context/SearchContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
@@ -20,11 +20,13 @@ export default function ClientLayoutWrapper({
 
   return (
     <CartProvider>
-      <Header />
-      <main className="min-h-screen">
-        {children}
-      </main>
-      <Footer />
+      <SearchProvider>
+        <Header />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <Footer />
+      </SearchProvider>
     </CartProvider>
   );
 }

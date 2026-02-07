@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import ProductCard from "@/components/productCards";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { products, categories, Product } from "@/data/product";
+import { useSearch } from "@/context/SearchContext";
+
+
 
 const ITEMS_PER_PAGE = 8;
 
@@ -12,14 +15,32 @@ export default function Home() {
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const { searchTerm } = useSearch();
+  console.log("Page sees searchTerm:", searchTerm);
+
 
   // Filter products by category
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === "All Meats") {
-      return products;
-    }
-    return products.filter((product) => product.category === selectedCategory);
-  }, [selectedCategory]);
+  let result = products;
+
+  // Category filter
+  if (selectedCategory !== "All Meats") {
+    result = result.filter(
+      (product) => product.category === selectedCategory
+    );
+  }
+
+  // Search filter
+  if (searchTerm.trim() !== "") {
+    console.log(searchTerm);
+    result = result.filter((product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  return result;
+}, [selectedCategory, searchTerm]);
+
 
   // Calculate total pages
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);

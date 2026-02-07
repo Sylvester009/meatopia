@@ -3,11 +3,15 @@ import type { Metadata } from 'next'
 import { Work_Sans } from 'next/font/google'
 import './globals.css'
 import ClientLayoutWrapper from './ClientLayoutWrapper'
+import { CartProvider } from '@/context/CartContext'
+import { SearchProvider } from '@/context/SearchContext'
 
-const workSans = Work_Sans({ 
+
+const workSans = Work_Sans({
   subsets: ['latin'],
-  variable: '--font-work-sans'
+  display: 'swap'
 })
+
 
 export const metadata: Metadata = {
   title: 'Meatopia - Premium Meats',
@@ -22,7 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={workSans.className}>
       <body className="font-sans">
-        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+        <CartProvider>
+          <SearchProvider>
+            <ClientLayoutWrapper>
+              {children}
+            </ClientLayoutWrapper>
+          </SearchProvider>
+        </CartProvider>
       </body>
     </html>
   )

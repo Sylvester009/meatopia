@@ -1,12 +1,16 @@
 // components/ProductCard.tsx
 import { Product } from "@/data/product";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+
   return (
     <div className="flex flex-col gap-0 bg-white rounded-xl border border-[#e2e8e2] overflow-hidden group hover:shadow-xl transition-all hover:-translate-y-1">
       <Link href={`/product/${product.id}`}>
@@ -46,7 +50,8 @@ export default function ProductCard({ product }: ProductCardProps) {
         </p>
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#f2f4f0]">
           <span className="text-[#131811] text-xl font-black">₦{product.price.toLocaleString()}</span>
-          <button className="flex items-center justify-center bg-primary hover:bg-primary/80 text-[#162210] p-2 rounded-lg transition-colors">
+          <button className="flex items-center justify-center bg-primary hover:bg-primary/80 text-[#162210] p-2 rounded-lg transition-colors cursor-pointer"
+          onClick={() => addToCart(product)}>
             <span className="material-symbols-outlined">add_shopping_cart</span>
           </button>
         </div>

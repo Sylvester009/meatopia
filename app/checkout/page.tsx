@@ -3,11 +3,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from "@/context/CartContext";
 
 export default function CheckoutPage() {
   const [step, setStep] = useState(2); // Step 2 of 3 as shown
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>('home');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'verifying' | 'success'>('pending');
+  const { cart, totalPrice, updateQuantity, removeItem } = useCart();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -19,27 +22,15 @@ export default function CheckoutPage() {
     additionalInfo: ''
   });
 
-  const cartItems = [
-    {
-      id: 1,
-      name: "Boneless Beef",
-      quantity: 2,
-      price: 8500,
-      weight: "1kg",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDgSguGN5u2MJHKag0-m2eQ6no0slgVgieQOATM2gTgonh0_1xd5991fMYZdkkw7bmrLYTTuRX9g_HB-HOtdth1-Mm-uIGBp6YD8Qcl6ZoyEEDJFoLL_uxFLZjzLj9-nh4vDVC_zJBi6Io5yH3vgzYUVbDUaoqayhpJxd4LICTpgF_xrmMxVbfkRqvnHKa5YhUHgW9US70RNSbxf45DFEGMKdQZdmClPkS6zIu0og-iqxpn-TEl65fADWLcbCDsQ4ti77KoSR6TB1k"
-    },
-    {
-      id: 2,
-      name: "Chicken Laps",
-      quantity: 1,
-      price: 6000,
-      weight: "1kg",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBSUatB_FetJiR6_wW-ZpKxvO1OQbofHSJJCjpjhcEFF5V4dwUGEsCdhwXpdNdiJuP6wt9k7Q1rlK2dLuV-7jVIrS4g94KeClTy-EJ3zv1pxL1RTIUI_YXs6Z61yltdcQj5Jo7f5qCs3CsdeGZXwHve5e1tNeWtQ6LRzvy5O4SxmodFZnVddah0PAYG24vOzWRKCcBw6HDi8xCrqRFzOoc9x3QZZWAPySCB-ihDmnK1itU0c626UEP26dTTCZ4Yy7i3oeNkZR1QvOU"
-    }
-  ];
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = deliveryMethod === 'home' ? 1500 : 0; // ₦1500 for home delivery
+  const subtotal = totalPrice;
+  let deliveryFee = 0;
+
+  if (cart.length === 0) {
+    deliveryFee = 0;
+  } else {
+    deliveryFee = deliveryMethod === 'home' ? 1500 : 0;;
+  }
   const total = subtotal + deliveryFee;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -98,23 +89,79 @@ export default function CheckoutPage() {
               </h3>
 
               {/* Item List */}
-              <div className="space-y-4 mb-8">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4 items-center">
-                    <div className="size-20 bg-zinc-100 rounded-lg overflow-hidden shrink">
-                      <div 
-                        className="w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: `url("${item.image}")` }}
-                      ></div>
-                    </div>
-                    <div className="grow">
-                      <h4 className="font-bold text-sm">{item.name}</h4>
-                      <p className="text-xs text-[#6f8961]">Qty: {item.quantity} • {item.weight}</p>
-                    </div>
-                    <p className="font-bold">₦{(item.price * item.quantity).toLocaleString()}</p>
-                  </div>
-                ))}
-              </div>
+      <div className="space-y-4 mb-8">
+  {cart.map((item) => (
+    <div key={item.id} className="flex gap-4 items-start p-4 bg-white rounded-lg border border-zinc-100">
+      {/* Image */}
+      <div className="size-20 bg-zinc-100 rounded-lg overflow-hidden shrink-0">
+        <div 
+          className="w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url("${item.image}")` }}
+        ></div>
+      </div>
+      
+      {/* Content area */}
+      <div className="grow flex flex-col gap-3">
+        {/* Top section: Name, size, price, and remove */}
+        <div className="flex justify-between items-start">
+          <div className="min-w-0 pr-4">
+            <h4 className="font-bold text-sm">{item.name}</h4>
+            <p className="text-xs text-[#6f8961] mt-1">Size: 1kg</p>
+          </div>
+          
+          <div className="shrink-0 text-right">
+            <p className="font-bold text-sm md:text-base">
+              ₦{(item.price * item.quantity).toLocaleString()}
+            </p>
+            <button
+              onClick={() => removeItem(item.id)}
+              className="text-red-500 text-sm mt-1 hover:text-red-700 hover:underline transition"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+        
+        {/* Bottom section: Quantity controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-zinc-600">Quantity:</span>
+            <div className="flex items-center bg-gray-100 rounded-lg">
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 transition"
+                disabled={item.quantity <= 1}
+              >
+                <span className="text-lg">−</span>
+              </button>
+              <span className="min-w-[32px] text-center font-medium">
+                {item.quantity}
+              </span>
+              <button
+                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 transition"
+              >
+                <span className="text-lg">+</span>
+              </button>
+            </div>
+          </div>
+          
+          <p className="text-sm text-zinc-500">
+            ₦{item.price.toLocaleString()} each
+          </p>
+        </div>
+      </div>
+    </div>
+  ))}
+  
+  {/* Empty State */}
+  {cart.length === 0 && (
+    <div className="text-center py-12">
+      <p className="text-[#6f8961] text-lg mb-2">Your cart is empty</p>
+      <p className="text-sm text-zinc-500">Add items to get started</p>
+    </div>
+  )}
+</div>
 
               {/* Add More Products Button */}
               <div className="mb-8">

@@ -3,6 +3,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -64,15 +66,15 @@ const handleSubmit = async (e: React.FormEvent) => {
       {/* Top Navigation */}
       <header className="flex items-center justify-between border-b border-[#dfe6db] px-6 py-4 bg-white">
         <div className="flex items-center gap-3">
-          <div className="size-7 text-primary">
-            <svg
-              fill="currentColor"
-              viewBox="0 0 48 48"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z"></path>
-            </svg>
-          </div>
+          <div className="size-6 bg-primary/70 rounded-lg flex items-center justify-center">
+                        <Image 
+                        src="https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg"
+                        alt="logo"
+                        width={100}
+                        height={100}
+                        className="rounded-lg"
+                        />
+                      </div>
           <h2 className="text-lg font-bold text-gray-800">Meatopia Admin</h2>
         </div>
         <button className="px-4 py-2 bg-primary text-[#162210] text-sm font-bold rounded-lg hover:opacity-90 transition-opacity">

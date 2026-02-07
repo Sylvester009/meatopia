@@ -1,6 +1,6 @@
 // data/products.ts
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   category: string;
   price: number; // in kobo (₦ * 100) for precision
@@ -36,7 +36,7 @@ export const categories = [
 
 export const products: Product[] = [
   {
-    id: 1,
+    id: "1",
     name: "Boneless Beef",
     category: "Beef",
     price: 8500,
@@ -66,7 +66,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 2,
+    id: "2",
     name: "Goat Meat Ogunfe",
     category: "Goat Meat",
     price: 9500,
@@ -96,7 +96,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 3,
+    id: "3",
     name: "Chicken Laps",
     category: "Chicken",
     price: 6000,
@@ -124,7 +124,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 4,
+    id: "4",
     name: "Turkey",
     category: "Turkey",
     price: 8400,
@@ -152,7 +152,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 5,
+    id: "5",
     name: "Rabbit Meat",
     category: "Rabbit",
     price: 12000,
@@ -180,7 +180,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 6,
+    id: "6",
     name: "1/16 Cow Sharing",
     category: "Meat Sharing",
     price: 62500,
@@ -211,7 +211,7 @@ export const products: Product[] = [
   },
   // Add more products (total of at least 20 for demonstration)
   {
-    id: 7,
+    id: "7",
     name: "Premium Beef Ribeye",
     category: "Beef",
     price: 12500,
@@ -241,7 +241,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 8,
+    id: "8",
     name: "Goat Leg",
     category: "Goat Meat",
     price: 11000,
@@ -269,7 +269,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 9,
+    id: "9",
     name: "Whole Chicken",
     category: "Chicken",
     price: 7500,
@@ -297,7 +297,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 10,
+    id: "10",
     name: "Turkey Wings",
     category: "Turkey",
     price: 6800,
@@ -325,7 +325,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 11,
+    id: "11",
     name: "Rabbit Legs",
     category: "Rabbit",
     price: 9500,
@@ -353,7 +353,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 12,
+    id: "12",
     name: "1/8 Cow Sharing",
     category: "Meat Sharing",
     price: 125000,
@@ -382,7 +382,7 @@ export const products: Product[] = [
   },
   // Add 8 more products to reach 20
   {
-    id: 13,
+    id: "13",
     name: "Beef Tenderloin",
     category: "Beef",
     price: 15000,
@@ -410,7 +410,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 14,
+    id: "14",
     name: "Goat Shoulder",
     category: "Goat Meat",
     price: 9200,
@@ -438,7 +438,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 15,
+    id: "15",
     name: "Chicken Breast",
     category: "Chicken",
     price: 5500,
@@ -466,7 +466,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 16,
+    id: "16",
     name: "Turkey Breast",
     category: "Turkey",
     price: 8900,
@@ -494,7 +494,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 17,
+    id: "17",
     name: "Whole Rabbit",
     category: "Rabbit",
     price: 14000,
@@ -522,7 +522,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 18,
+    id: "18",
     name: "1/4 Cow Sharing",
     category: "Meat Sharing",
     price: 250000,
@@ -550,7 +550,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 19,
+    id: "19",
     name: "Beef Chuck",
     category: "Beef",
     price: 7800,
@@ -578,7 +578,7 @@ export const products: Product[] = [
     weightUnit: "kg",
   },
   {
-    id: 20,
+    id: "20",
     name: "Chicken Wings",
     category: "Chicken",
     price: 4800,
