@@ -14,7 +14,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   // Use React's use() hook to unwrap the Promise
   const { id } = use(params);
 
-  const productId = parseInt(id);
+  const productId = id;
   console.log("Product ID:", productId);
 
   console.log("Product ID from params:", id);
@@ -29,7 +29,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
       <main className="flex flex-1 justify-center py-8">
-        <div className="layout-content-container flex flex-col max-w-300 flex-1 px-4 lg:px-10">
+        <div className="layout-content-container flex flex-col max-w-340 flex-1 px-4 lg:px-4">
           {/* Breadcrumbs */}
           <div className="flex flex-wrap gap-2 py-4">
             <Link

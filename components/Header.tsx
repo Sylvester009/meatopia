@@ -13,7 +13,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-solid border-[#e2e8e2] px-4 lg:px-20 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-8xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-8 flex-1">
           <div className="flex items-center gap-3 shrink-0">
             <div className="size-7
@@ -21,8 +21,8 @@ export default function Header() {
               <Image 
               src="https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg"
               alt="logo"
-              width={100}
-              height={100}
+              width={120}
+              height={120}
               className="rounded-lg"
               />
             </div>

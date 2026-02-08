@@ -56,7 +56,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
               key={index}
               className={`flex h-8 items-center justify-center gap-x-2 rounded-lg px-4 ${
                 tag.color === 'primary' 
-                  ? 'bg-primary/20 border border-primary/30' 
+                  ? 'bg-primary border border-primary' 
                   : 'bg-[#f2f4f0]'
               }`}
             >

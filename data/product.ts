@@ -48,7 +48,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -78,7 +78,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -106,7 +106,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -134,7 +134,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -162,7 +162,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -192,7 +192,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -223,7 +223,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -251,7 +251,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -279,7 +279,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -307,7 +307,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -335,7 +335,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -363,7 +363,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -392,7 +392,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -420,7 +420,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -448,7 +448,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -476,7 +476,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -504,7 +504,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -532,7 +532,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -560,7 +560,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
@@ -588,7 +588,7 @@ export const products: Product[] = [
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
       { icon: "location_on", label: "Local Farm" },
-      { icon: "verified", label: "Antibiotic-free" }
+      
     ],
     details: {
       cookingTips: [
