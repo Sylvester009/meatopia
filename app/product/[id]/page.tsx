@@ -51,7 +51,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 productName={product.name}
                 tag={product.tag}
                 tagColor={product.tagColor}
-                images={product?.weightOptions.map(wImage => wImage.image)}
+                images={product?.weightOptions?.map(wImage => wImage.image) || []}
               />
             </div>
 
