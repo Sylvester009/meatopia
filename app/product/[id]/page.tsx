@@ -15,10 +15,6 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { id } = use(params);
 
   const productId = id;
-  console.log("Product ID:", productId);
-
-  console.log("Product ID from params:", id);
-  console.log("Parsed Product ID:", productId);
 
   const product = products.find((p) => p.id === productId);
 
@@ -29,7 +25,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
       <main className="flex flex-1 justify-center py-8">
-        <div className="layout-content-container flex flex-col max-w-340 flex-1 px-4 lg:px-4">
+        <div className="layout-content-container flex flex-col max-w-full w-full flex-1 px-4 sm:px-4 md:px-8 lg:px-20">
           {/* Breadcrumbs */}
           <div className="flex flex-wrap gap-2 py-4">
             <Link
@@ -52,10 +48,10 @@ export default function ProductPage({ params }: ProductPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 py-4">
             <div className="lg:col-span-7">
               <ProductImageGallery
-                images={[product.image]}
                 productName={product.name}
                 tag={product.tag}
                 tagColor={product.tagColor}
+                images={product?.weightOptions.map(wImage => wImage.image)}
               />
             </div>
 

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Product } from '@/data/product';
+import { useCart } from "@/context/CartContext"
+
 
 interface ProductDetailsProps {
   product: Product;
@@ -10,12 +12,29 @@ interface ProductDetailsProps {
 export default function ProductDetails({ product }: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'cooking' | 'nutrition'>('cooking');
+  const { addToCart } = useCart()
 
-  const totalPrice = (product.price * quantity / 100).toFixed(2);
+  const [selectedWeight, setSelectedWeight] = useState(product.weightOptions?.[1] || product.weightOptions?.[0])
+
+  const basePrice = product.price
+  const finalPrice = basePrice * selectedWeight.multiplier
+  const totalPrice = ((finalPrice * quantity)).toFixed(2)
 
   const formatPrice = (price: number) => {
-    return `₦${(price / 100).toFixed(2)}`;
+    return `₦${(price).toFixed(2)}`;
   };
+  
+  
+  function handleAddToCart() {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: finalPrice,
+      quantity: quantity,
+      weight: selectedWeight.label,
+      image: selectedWeight.image,
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -42,12 +61,31 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         <span className="text-xl lg:text-2xl font-black text-[#131811]">
           {formatPrice(product.price)}
         </span>
-        {product.weightUnit && (
-          <span className="text-[#6f8961] text-lg lg:text-xl font-normal">
-            / {product.weightUnit}
-          </span>
-        )}
+        <span className="text-base uppercase font-bold text-[#6f8961]">
+    / Kg
+  </span>
+
       </div>
+      <div className="flex flex-col gap-2">
+  <label className="text-xs uppercase font-bold text-[#6f8961]">
+    Select Weight
+  </label>
+
+  <select
+    value={selectedWeight?.label}
+    onChange={(e) => {
+      const option = product?.weightOptions.find(w => w.label === e.target.value)
+      setSelectedWeight(option)
+    }}
+    className="h-12 rounded-lg border border-[#6f8961] px-3 font-medium w-3/4"
+  >
+    {product?.weightOptions.map((weight) => (
+      <option key={weight?.label} value={weight?.label}>
+        {weight?.label}
+      </option>
+    ))}
+  </select>
+</div>
 
       {product.tags && product.tags.length > 0 && (
         <div className="flex gap-3 flex-wrap">
@@ -100,10 +138,14 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             <p className="font-bold text-lg">₦{totalPrice}</p>
           </div>
         </div>
-        <button className="flex w-full items-center justify-center gap-3 rounded-lg h-14 bg-primary text-[#131811] text-lg font-black tracking-wide hover:opacity-90 transition-all shadow-lg shadow-primary/20">
-          <span className="material-symbols-outlined">shopping_basket</span>
-          Add to Basket
-        </button>
+        <button
+  onClick={handleAddToCart}
+  className="flex w-full items-center justify-center gap-3 rounded-lg h-14 bg-primary text-[#131811] text-lg font-black"
+>
+  <span className="material-symbols-outlined">shopping_basket</span>
+  Add to Basket
+</button>
+
         <div className="flex items-center justify-center gap-4 lg:gap-6 mt-2">
           <div className="flex items-center gap-2 text-[11px] font-bold text-[#6f8961] uppercase">
             <span className="material-symbols-outlined text-lg">local_shipping</span>

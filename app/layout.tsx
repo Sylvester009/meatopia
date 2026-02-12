@@ -5,6 +5,12 @@ import './globals.css'
 import ClientLayoutWrapper from './ClientLayoutWrapper'
 import { CartProvider } from '@/context/CartContext'
 import { SearchProvider } from '@/context/SearchContext'
+import { Toaster } from "sonner"
+import Script from "next/script";
+
+<Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+
+
 
 
 const workSans = Work_Sans({
@@ -29,6 +35,7 @@ export default function RootLayout({
         <CartProvider>
           <SearchProvider>
             <ClientLayoutWrapper>
+              <Toaster richColors />
               {children}
             </ClientLayoutWrapper>
           </SearchProvider>

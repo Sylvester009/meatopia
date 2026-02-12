@@ -37,7 +37,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           }}
         ></div>
       </div>
-      </Link>
+      
       <div className="p-5 flex flex-col gap-1">
         <p className="text-[#6f8961] text-[10px] font-bold uppercase tracking-widest">
           {product.category}
@@ -48,14 +48,15 @@ export default function ProductCard({ product }: ProductCardProps) {
         <p className="text-[#6f8961] text-sm font-normal mb-3">
           {product.description}
         </p>
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#f2f4f0]">
+        {/* <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#f2f4f0]">
           <span className="text-[#131811] text-xl font-black">₦{product.price.toLocaleString()}</span>
           <button className="flex items-center justify-center bg-primary hover:bg-primary/80 text-[#162210] p-2 rounded-lg transition-colors cursor-pointer"
           onClick={() => addToCart(product)}>
             <span className="material-symbols-outlined">add_shopping_cart</span>
           </button>
-        </div>
+        </div> */}
       </div>
+      </Link>
     </div>
   );
 }

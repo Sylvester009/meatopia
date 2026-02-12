@@ -4,6 +4,7 @@ import { Product } from "@/data/product";
 
 export type CartItem = Product & {
   quantity: number;
+  weight: string;
 };
 
 type CartContextType = {
@@ -30,21 +31,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("cart", JSON.stringify(cart))
   }, [cart])
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: CartItem) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const id = `${product.id}-${product?.weight}`
+      const existing = prev.find((item) => item.id === id);
 
       if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
+      return prev.map(item =>
+        item.id === id
+          ? { ...item, quantity: item.quantity + product?.quantity }
+          : item
+      )
+    }
 
-      return [...prev, { ...product, quantity: 1 }];
+    return [...prev, { ...product, id }]
     });
   };
+
+
 
   function updateQuantity(id: string, qty: number) {
     setCart((prev) => {

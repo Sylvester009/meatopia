@@ -4,14 +4,16 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCart } from "@/context/CartContext";
+import PayButton from '@/components/PaystackButton';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
-  const [formCompleted, setFormCompleted] = useState(false);
-  const [deliveryCompleted, setDeliveryCompleted] = useState(false);
-  const [step, setStep] = useState(0);
-  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>('home');
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'verifying' | 'success'>('pending');
-  const { cart, totalPrice, updateQuantity, removeItem } = useCart();
+  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>('home')
+const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success'>('pending')
+
+const { cart, totalPrice, updateQuantity, removeItem, clearCart } = useCart()
+
+
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -24,79 +26,39 @@ export default function CheckoutPage() {
     additionalInfo: ''
   });
 
-  useEffect(() => {
-  // Check if all required form fields are filled
-  const isFormValid = 
-    formData.firstName.trim() !== '' &&
-    formData.lastName.trim() !== '' &&
-    formData.phone.trim() !== '' &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
-    formData.address.trim() !== '' &&
-    formData.city.trim() !== '' &&
-    formData.state.trim() !== '';
-  
-  setFormCompleted(isFormValid);
-  
-  // Auto-advance to step 2 if form is completed
-  if (isFormValid && step < 2) {
-    setStep(2);
-  }
-}, [formData, step]);
+  const isFormValid =
+  formData.firstName &&
+  formData.lastName &&
+  formData.phone &&
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+  formData.address &&
+  formData.city &&
+  formData.state
 
-// Update the delivery method onChange handlers
-const handleDeliverySelect = (method: 'pickup' | 'home') => {
-  setDeliveryMethod(method);
-  setDeliveryCompleted(true);
-  
-  // Auto-advance to step 3 when delivery method is selected
-  if (step < 3) {
-    setStep(3);
+useEffect(() => {
+  if (!isFormValid) {
+    toast.error("Please complete your delivery information")
   }
-};
-
-// Update the step display text based on current step
-const getStepText = () => {
-  switch(step) {
-    case 1: return "Customer Information";
-    case 2: return "Delivery Method";
-    case 3: return "Payment";
-    default: return "Delivery & Payment";
-  }
-}; 
+}, [isFormValid]) 
 
 
   const subtotal = totalPrice;
-  let deliveryFee = 0;
+  
+  const deliveryFee = cart.length === 0 ? 0 : deliveryMethod === 'home' ? 1500 : 0
+const total = totalPrice + deliveryFee
+const totalAmount = total * 100
+const customerEmail = formData.email || "customer@email.com"
 
-  if (cart.length === 0) {
-    deliveryFee = 0;
-  } else {
-    deliveryFee = deliveryMethod === 'home' ? 1500 : 0;;
-  }
-  const total = subtotal + deliveryFee;
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const { name, value } = e.target
+  setFormData(prev => ({ ...prev, [name]: value }))
+}
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+const handleDeliverySelect = (method: 'pickup' | 'home') => {
+  setDeliveryMethod(method)
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (paymentStatus === 'pending') {
-      setPaymentStatus('verifying');
-    }
-  };
 
-  const handlePaymentVerification = () => {
-    setPaymentStatus('success');
-    // In a real app, you would verify with backend
-    setTimeout(() => {
-      setPaymentStatus('success');
-    }, 2000);
-  };
 
   return (
     <div className="min-h-screen bg-[#f6f8f6]">
@@ -148,7 +110,9 @@ const getStepText = () => {
         <div className="flex justify-between items-start">
           <div className="min-w-0 pr-4">
             <h4 className="font-bold text-sm">{item.name}</h4>
-            <p className="text-xs text-[#6f8961] mt-1">Size: 1kg</p>
+            <p className="text-xs text-gray-500">
+              Weight: {item.weight}
+            </p>
           </div>
           
           <div className="shrink-0 text-right">
@@ -245,22 +209,21 @@ const getStepText = () => {
     <div className="flex gap-6 justify-between items-end mb-3">
       <div>
         <p className="text-primary text-xs font-bold uppercase tracking-wider mb-1">
-          Current Step
+          Kindly fill all fields below *Important*
         </p>
-        <p className="text-[#131811] text-base font-bold">Step {step} of 3: {getStepText()}</p>
       </div>
-      <p className="text-[#131811] text-sm font-bold">{Math.round((step / 3) * 100)}%</p>
+      {/* <p className="text-[#131811] text-sm font-bold">{Math.round((step / 3) * 100)}%</p> */}
     </div>
-    <div className="h-2 rounded-full bg-[#dfe6db] overflow-hidden">
+    {/* <div className="h-2 rounded-full bg-[#dfe6db] overflow-hidden">
       <div className="h-full bg-primary" style={{ width: `${(step / 3) * 100}%` }}></div>
-    </div>
+    </div> */}
     
     
   </div>
 
   {/* Form Section: Customer Information */}
   <div className="bg-white border border-[#dfe6db] rounded-xl p-8">
-    <div className="flex justify-between items-center mb-6">
+    {/* <div className="flex justify-between items-center mb-6">
       <h3 className="text-lg font-bold flex items-center gap-2">
         <span className={`material-symbols-outlined ${formCompleted ? 'text-green-500' : ''}`}>
           {formCompleted ? 'check_circle' : 'person'}
@@ -272,7 +235,7 @@ const getStepText = () => {
           ✓ Completed
         </span>
       )}
-    </div>
+    </div> */}
     
     <form className="space-y-4">
       {/* Your existing form fields remain exactly the same */}
@@ -400,7 +363,7 @@ const getStepText = () => {
 
   {/* Form Section: Delivery Method */}
   <div className="bg-white border border-[#dfe6db] rounded-xl p-8">
-    <div className="flex justify-between items-center mb-2">
+    {/* <div className="flex justify-between items-center mb-2">
       <div>
         <h3 className="text-lg font-bold flex items-center gap-2">
           <span className={`material-symbols-outlined ${deliveryCompleted ? 'text-green-500' : ''}`}>
@@ -415,7 +378,7 @@ const getStepText = () => {
           ✓ Selected
         </span>
       )}
-    </div>
+    </div> */}
     
     <div className="space-y-4">
       <label className={`relative flex cursor-pointer rounded-xl border-2 ${deliveryMethod === 'home' ? 'border-primary bg-primary/5' : 'border-[#dfe6db]'} p-4 transition-colors`}>
@@ -476,91 +439,59 @@ const getStepText = () => {
       )}
     </div>
 
-    {/* Bank Transfer Information */}
-    <div className="mb-6 p-4 bg-[#f2f4f0] rounded-lg">
-      <p className="font-bold text-sm mb-2">Bank Transfer Details:</p>
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-[#6f8961]">Bank Name:</span>
-          <span className="font-bold">GTBank</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-[#6f8961]">Account Name:</span>
-          <span className="font-bold">Meatopia Premium Meats Ltd</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-[#6f8961]">Account Number:</span>
-          <span className="font-bold">0123456789</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-[#6f8961]">Amount:</span>
-          <span className="font-bold text-primary">₦{total.toLocaleString()}</span>
-        </div>
-      </div>
-      <p className="text-xs text-[#6f8961] mt-3">
-        Please use your order number as payment reference
-      </p>
-    </div>
+    
 
     {/* Payment Status */}
     {paymentStatus === 'success' ? (
-      <div className="text-center p-6 bg-green-50 border border-green-200 rounded-lg">
-        <span className="material-symbols-outlined text-green-500 text-4xl mb-2">
-          check_circle
-        </span>
-        <h4 className="font-bold text-lg text-green-700">Payment Successful!</h4>
-        <p className="text-sm text-green-600 mt-2">
-          Thank you for your order. We&apos;ll send a confirmation email shortly.
-        </p>
-        <Link
-          href="/"
-          className="inline-block mt-4 px-6 py-2 bg-primary text-[#162210] font-bold rounded-lg hover:opacity-90 transition-opacity"
-        >
-          Continue Shopping
-        </Link>
-      </div>
-    ) : paymentStatus === 'verifying' ? (
-      <div className="text-center p-6 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-        <h4 className="font-bold text-lg text-blue-700">Verifying Payment...</h4>
-        <p className="text-sm text-blue-600 mt-2">
-          Please wait while we confirm your payment.
-        </p>
-      </div>
-    ) : (
-      <>
-        <button
-          onClick={handleSubmit}
-          disabled={!formCompleted || !deliveryCompleted || cart.length === 0}
-          className={`w-full ${
-            !formCompleted || !deliveryCompleted || cart.length === 0
-              ? 'bg-gray-300 cursor-not-allowed'
-              : 'bg-primary hover:opacity-90'
-          } text-[#131811] py-4 rounded-xl text-lg font-black tracking-tight transition-all shadow-lg flex items-center justify-center gap-3`}
-        >
-          <span className="material-symbols-outlined">lock</span>
-          PLACE ORDER — ₦{total.toLocaleString()}
-        </button>
+  <div className="text-center p-6 bg-green-50 border border-green-200 rounded-lg">
+    <span className="material-symbols-outlined text-green-500 text-4xl mb-2">
+      check_circle
+    </span>
+    <h4 className="font-bold text-lg text-green-700">Payment Successful!</h4>
+    <p className="text-sm text-green-600 mt-2">
+      Your order has been placed successfully.
+    </p>
 
-        <div className="mt-6 border-t border-[#dfe6db] pt-6">
-          <p className="text-sm text-[#6f8961] mb-4">
-            After making the bank transfer, click the button below to confirm payment:
-          </p>
-          <button
-            onClick={handlePaymentVerification}
-            disabled={!formCompleted || !deliveryCompleted}
-            className={`w-full ${
-              !formCompleted || !deliveryCompleted
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-[#131811] hover:opacity-90'
-            } text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2`}
-          >
-            <span className="material-symbols-outlined">verified</span>
-            I Have Made the Transfer
-          </button>
-        </div>
-      </>
-    )}
+    <Link
+      href="/"
+      className="inline-block mt-4 px-6 py-2 bg-primary text-[#162210] font-bold rounded-lg hover:opacity-90"
+    >
+      Continue Shopping
+    </Link>
+  </div>
+) : (
+  <PayButton
+    email={customerEmail}
+    amount={totalAmount}
+    disabled={!isFormValid || cart.length === 0}
+    metadata={{
+      custom_fields: [
+        { display_name: "Customer Name", value: `${formData.firstName} ${formData.lastName}` },
+        { display_name: "Phone", value: formData.phone }
+      ]
+    }}
+    onSuccess={async (ref) => {
+      toast.success("Payment successful 🎉")
+
+      setPaymentStatus("success")
+
+      await fetch("/api/send-order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cart,
+          formData,
+          deliveryMethod,
+          total,
+          reference: ref.reference
+        })
+      })
+
+      clearCart()
+    }}
+  />
+)}
+
 
     <p className="text-center text-[10px] text-[#6f8961] mt-4 uppercase tracking-widest font-bold">
       By clicking, you agree to our Terms & Conditions
