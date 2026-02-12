@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer"
 import { NextResponse } from "next/server"
+import { CartItem } from "@/context/CartContext"
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
       },
     })
 
-    const itemsHTML = data.cart.map(item => `
+    const itemsHTML = data.cart.map((item: CartItem) => `
       <tr>
         <td>${item.name}</td>
         <td>${item.weight}</td>
