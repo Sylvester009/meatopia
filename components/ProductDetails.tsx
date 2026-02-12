@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Product } from '@/data/product';
-import { useCart } from "@/context/CartContext"
+import { CartItem, useCart } from "@/context/CartContext"
 
 
 interface ProductDetailsProps {
@@ -26,15 +26,17 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   
   
   function handleAddToCart() {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: finalPrice,
-      quantity: quantity,
-      weight: selectedWeight.label,
-      image: selectedWeight.image,
-    })
-  }
+  if (!selectedWeight) return; // guard just in case
+
+  addToCart({
+    ...product,
+    quantity: quantity,
+    weight: selectedWeight.label,
+    image: selectedWeight.image,
+    id: `${product.id}-${selectedWeight.label}`, // optional, if your context expects unique ID
+  } as CartItem); 
+}
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,19 +74,23 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   </label>
 
   <select
-    value={selectedWeight?.label}
-    onChange={(e) => {
-      const option = product?.weightOptions.find(w => w.label === e.target.value)
-      setSelectedWeight(option)
-    }}
-    className="h-12 rounded-lg border border-[#6f8961] px-3 font-medium w-3/4"
-  >
-    {product?.weightOptions.map((weight) => (
-      <option key={weight?.label} value={weight?.label}>
-        {weight?.label}
-      </option>
-    ))}
-  </select>
+  value={selectedWeight?.label || ""}
+  onChange={(e) => {
+    // Only try to find if weightOptions exists
+    const option = product?.weightOptions?.find(w => w.label === e.target.value);
+    if (option) setSelectedWeight(option);
+  }}
+  className="h-12 rounded-lg border border-[#6f8961] px-3 font-medium w-3/4"
+>
+  {product?.weightOptions?.map((weight) => (
+    <option key={weight?.label} value={weight?.label}>
+      {weight?.label}
+    </option>
+  )) || (
+    <option value="">No weights available</option>
+  )}
+</select>
+
 </div>
 
       {product.tags && product.tags.length > 0 && (

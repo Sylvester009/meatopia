@@ -31,22 +31,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("cart", JSON.stringify(cart))
   }, [cart])
 
-  const addToCart = (product: CartItem) => {
-    setCart((prev) => {
-      const id = `${product.id}-${product?.weight}`
-      const existing = prev.find((item) => item.id === id);
+  const addToCart = (product: Product) => {
+  // Assign default quantity and weight
+  const newItem: CartItem = {
+    ...product,
+    quantity: 1,
+    weight: "1kg", // or pull from product if it exists
+  };
 
-      if (existing) {
-      return prev.map(item =>
+  // Generate unique ID using original id + weight
+  const id = `${newItem.id}-${newItem.weight}`;
+
+  setCart((prev) => {
+    const existing = prev.find((item) => item.id === id);
+
+    if (existing) {
+      return prev.map((item) =>
         item.id === id
-          ? { ...item, quantity: item.quantity + product?.quantity }
+          ? { ...item, quantity: item.quantity + newItem.quantity }
           : item
-      )
+      );
     }
 
-    return [...prev, { ...product, id }]
-    });
-  };
+    return [...prev, { ...newItem, id }];
+  });
+};
+
 
 
 
