@@ -23,7 +23,7 @@ export default function PayButton({
     }
 
     const handler = (window as any).PaystackPop.setup({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
       email,
       amount,
       currency: "NGN",

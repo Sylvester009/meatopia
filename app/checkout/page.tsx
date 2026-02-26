@@ -62,6 +62,31 @@ export default function CheckoutPage() {
     setDeliveryMethod(method);
   };
 
+  const handlePaymentSuccess = async (ref: any) => {
+    const res = await fetch('/api/paystack/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        cart,
+        formData,
+        deliveryMethod,
+        total,
+        reference: ref.reference,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert('Order placed successfully');
+      clearCart();
+    } else {
+      alert('Payment verification failed');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f8f6]">
       <main className="max-w-300 mx-auto px-4 py-8">
@@ -93,7 +118,7 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* LEFT COLUMN: Order Summary (Sticky) */}
-          <div className="lg:col-span-5 order-2 lg:order-1">
+          <div className="lg:col-span-5 order-first lg:order-1">
             <div className="sticky top-28 bg-white border border-[#dfe6db] rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">
@@ -130,7 +155,10 @@ export default function CheckoutPage() {
 
                         <div className="shrink-0 text-right">
                           <p className="font-bold text-sm md:text-base">
-                            ₦{(item.unitPrice * item.quantity).toLocaleString() ?? '0'}
+                            ₦
+                            {(
+                              item.unitPrice * item.quantity
+                            ).toLocaleString() ?? '0'}
                           </p>
                           <button
                             onClick={() => removeItem(item.id)}
@@ -236,7 +264,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* RIGHT COLUMN: Checkout Process */}
-          <div className="lg:col-span-7 order-1 lg:order-2 space-y-8">
+          <div className="lg:col-span-7 order-last lg:order-2 space-y-8">
             {/* Progress Bar */}
             <div className="bg-white border border-[#dfe6db] rounded-xl p-6">
               <div className="flex gap-6 justify-between items-end mb-3">
@@ -534,25 +562,7 @@ export default function CheckoutPage() {
                       {display_name: 'Phone', value: formData.phone},
                     ],
                   }}
-                  onSuccess={async ref => {
-                    toast.success('Payment successful 🎉');
-
-                    setPaymentStatus('success');
-
-                    await fetch('/api/send-order-email', {
-                      method: 'POST',
-                      headers: {'Content-Type': 'application/json'},
-                      body: JSON.stringify({
-                        cart,
-                        formData,
-                        deliveryMethod,
-                        total,
-                        reference: ref.reference,
-                      }),
-                    });
-
-                    clearCart();
-                  }}
+                  onSuccess={handlePaymentSuccess}
                 />
               )}
 

@@ -88,7 +88,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
             );
             if (option) setSelectedWeight(option);
           }}
-          className="h-12 rounded-lg border border-[#6f8961] px-3 font-medium w-3/4"
+          className="h-12 rounded-lg border border-[#6f8961] px-3 font-medium w-3/5"
         >
           {product?.weightOptions?.map(weight => (
             <option key={weight?.label} value={weight?.label}>

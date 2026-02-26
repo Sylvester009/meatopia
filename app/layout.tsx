@@ -8,7 +8,6 @@ import { SearchProvider } from '@/context/SearchContext'
 import { Toaster } from "sonner"
 import Script from "next/script";
 
-<Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
 
 
 
@@ -37,6 +36,10 @@ export default function RootLayout({
             <ClientLayoutWrapper>
               <Toaster richColors />
               {children}
+              <Script
+          src="https://js.paystack.co/v1/inline.js"
+          strategy="afterInteractive"
+        />
             </ClientLayoutWrapper>
           </SearchProvider>
         </CartProvider>
