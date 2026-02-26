@@ -1,4 +1,3 @@
-import nodemailer from "nodemailer"
 import { NextResponse } from "next/server"
 import { CartItem } from "@/context/CartContext"
 import { transporter } from "@/lib/mailer"
