@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         <td>${item.name}</td>
         <td>${item.weight}</td>
         <td>${item.quantity}</td>
-        <td>₦${(item.price * item.quantity).toLocaleString()}</td>
+        <td>₦${(item.unitPrice * item.quantity).toLocaleString()}</td>
       </tr>
     `).join("")
 
