@@ -41,7 +41,7 @@ export default function ProductImageGallery({ images, productName, tag }: Produc
             aria-label={`Thumbnail ${index + 1} for ${productName}`}
           ></div>
         ))}
-        {images.length > 3 && (
+        {/* {images.length > 3 && (
           <div
             onClick={() => setSelectedImage(3)}
             className="aspect-square bg-center bg-no-repeat bg-cover rounded-lg hover:border-primary/50 border-2 border-transparent transition-all cursor-pointer flex items-center justify-center bg-black/40 relative overflow-hidden"
@@ -51,7 +51,7 @@ export default function ProductImageGallery({ images, productName, tag }: Produc
             <span className="relative z-10 text-white font-bold">+{images.length - 3} More</span>
             <div className="absolute inset-0 bg-black/40"></div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
