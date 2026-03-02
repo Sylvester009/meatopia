@@ -7,7 +7,9 @@ import {useCart} from '@/context/CartContext';
 import PayButton from '@/components/PaystackButton';
 import {toast} from 'sonner';
 
+
 export default function CheckoutPage() {
+  const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>(
     'home',
   );
@@ -553,6 +555,7 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <PayButton
+                    paystackKey={paystackKey}
                     email={customerEmail}
                     amount={totalAmount}
                     disabled={!isFormValid || cart.length === 0}
