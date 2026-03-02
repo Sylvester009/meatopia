@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { CartItem } from "@/context/CartContext"
-import { transporter } from "@/lib/mailer"
+import { getTransporter } from "@/lib/mailer"
 
 export async function POST(req: Request) {
+  const transporter = getTransporter();
   try {
     const data = await req.json()
 
