@@ -24,8 +24,9 @@ export default function PayButton({
   disabled,
   metadata,
 }: Props) {
-  const payWithPaystack = () => {
-    console.log(paystackKey);
+  const payWithPaystack = (e: any) => {
+    e.preventDefault();
+
     if (!window.PaystackPop) {
       alert('Payment system not ready. Refresh page.');
       return;
