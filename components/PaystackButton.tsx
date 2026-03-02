@@ -2,9 +2,31 @@
 
 import Script from 'next/script';
 
+type PaystackSuccessResponse = {
+  reference: string;
+  status: string;
+  trans?: string;
+  transaction?: string;
+  message?: string;
+};
+
+type PaystackPopType = {
+  setup: (options: {
+    key: string;
+    email: string;
+    amount: number;
+    currency: string;
+    metadata?: Record<string, unknown>;
+    callback: (response: PaystackSuccessResponse) => void;
+    onClose: () => void;
+  }) => {
+    openIframe: () => void;
+  };
+};
+
 declare global {
   interface Window {
-    PaystackPop: any;
+    PaystackPop?: PaystackPopType;
   }
 }
 
@@ -12,10 +34,11 @@ type Props = {
   paystackKey: string;
   email: string;
   amount: number;
-  onSuccess: (ref: any) => void;
+  onSuccess: (ref: PaystackSuccessResponse) => void;
   disabled?: boolean;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 };
+
 export default function PayButton({
   paystackKey,
   email,
@@ -24,7 +47,9 @@ export default function PayButton({
   disabled,
   metadata,
 }: Props) {
-  const payWithPaystack = (e: any) => {
+  const payWithPaystack = (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
     e.preventDefault();
 
     if (!window.PaystackPop) {
@@ -33,14 +58,13 @@ export default function PayButton({
     }
 
     const handler = window.PaystackPop.setup({
-      key: paystackKey, // ✅ PUBLIC KEY ONLY
-      email: email,
-      amount: amount,
+      key: paystackKey,
+      email,
+      amount,
       currency: 'NGN',
-
       metadata,
 
-      callback: function (response: any) {
+      callback: function (response) {
         onSuccess(response);
       },
 

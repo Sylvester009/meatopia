@@ -7,6 +7,14 @@ import {useCart} from '@/context/CartContext';
 import PayButton from '@/components/PaystackButton';
 import {toast} from 'sonner';
 
+type PaystackSuccessResponse = {
+  reference: string;
+  status: string;
+  trans?: string;
+  transaction?: string;
+  message?: string;
+};
+
 
 export default function CheckoutPage() {
   const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
@@ -64,7 +72,7 @@ export default function CheckoutPage() {
     setDeliveryMethod(method);
   };
 
-  const handlePaymentSuccess = async (ref: any) => {
+  const handlePaymentSuccess = async (ref: PaystackSuccessResponse) => {
     const res = await fetch('/api/paystack/verify', {
       method: 'POST',
       headers: {
