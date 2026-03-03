@@ -12,6 +12,7 @@ export async function POST(req: Request) {
     if (!reference) {
       return NextResponse.json({ success: false, message: "No payment reference" }, { status: 400 })
     }
+    console.log("SECRET KEY:", process.env.PAYSTACK_SECRET_KEY);
 
     const verify = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
     )
 
     const verifyData = await verify.json()
+    console.log("VERIFY RESPONSE:", verifyData);
 
     if (verifyData.data.status !== "success") {
       return NextResponse.json({ success: false, message: "Payment not verified" })
