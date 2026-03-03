@@ -13,7 +13,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "No payment reference" }, { status: 400 })
     }
 
-    // 🔐 VERIFY PAYMENT WITH PAYSTACK
     const verify = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {

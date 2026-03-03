@@ -18,6 +18,8 @@ type PaystackSuccessResponse = {
 
 export default function CheckoutPage() {
   const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
+  console.log("ENV KEY:", process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY);
+  console.log("Paystack Key Variable:", paystackKey);
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>(
     'home',
   );
