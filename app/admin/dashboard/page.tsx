@@ -64,7 +64,6 @@ export default function InventoryDashboard() {
     setProduct(prev => [newProduct, ...prev]);
     
     // In a real app, you would send this to your backend API
-    console.log('New product added:', newProduct);
     
     // Show success message
     alert('Product added successfully!');

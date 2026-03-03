@@ -9,7 +9,6 @@ import Image from "next/image";
 export default function Header() {
   const { totalItems } = useCart();
   const { searchTerm, setSearchTerm } = useSearch();
-  console.log("Header searchTerm:", searchTerm);
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-solid border-[#e2e8e2] px-4 lg:px-20 py-4">
