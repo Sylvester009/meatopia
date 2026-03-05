@@ -688,7 +688,7 @@ export const products: Product[] = [
     category: "Goat Meat",
     price: 700,
     description: "Bone-in | Rich Flavor",
-    image: "public\images\Bone pieces(Egúngún).png",
+    image: "/images/Bone pieces(Egúngún).png",
     reviewsCount: 128,
     tags: [
       { icon: "eco", label: "Grass-fed", color: "primary" },
