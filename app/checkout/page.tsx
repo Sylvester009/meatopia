@@ -15,13 +15,13 @@ type PaystackSuccessResponse = {
   message?: string;
 };
 
-
 export default function CheckoutPage() {
   const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>(
     'home',
   );
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success'>(
+  const [verifying, setVerifying] = useState(false);
+  const [paymentStatus, __setPaymentStatus] = useState<'pending' | 'success'>(
     'pending',
   );
 
@@ -73,27 +73,34 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentSuccess = async (ref: PaystackSuccessResponse) => {
-    const res = await fetch('/api/paystack/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        cart,
-        formData,
-        deliveryMethod,
-        total,
-        reference: ref.reference,
-      }),
-    });
+    setVerifying(true);
+    try {
+      const res = await fetch('/api/paystack/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cart,
+          formData,
+          deliveryMethod,
+          total,
+          reference: ref.reference,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.success) {
-      alert('Order placed successfully');
-      clearCart();
-    } else {
-      alert('Payment verification failed');
+      if (res.ok && data.success) {
+        alert('Order placed successfully');
+        clearCart();
+      } else {
+        console.error('Verification failed:', data);
+        alert('Payment verification failed');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      alert('Server error verifying payment');
     }
   };
 
@@ -566,7 +573,7 @@ export default function CheckoutPage() {
                     paystackKey={paystackKey}
                     email={customerEmail}
                     amount={totalAmount}
-                    disabled={!isFormValid || cart.length === 0}
+                    disabled={!isFormValid || cart.length === 0 || verifying}
                     metadata={{
                       custom_fields: [
                         {
