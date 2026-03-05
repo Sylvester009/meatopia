@@ -1,33 +1,24 @@
 // app/layout.tsx - Keep as server component
-import type { Metadata } from 'next'
-import { Work_Sans } from 'next/font/google'
-import './globals.css'
-import ClientLayoutWrapper from './ClientLayoutWrapper'
-import { CartProvider } from '@/context/CartContext'
-import { SearchProvider } from '@/context/SearchContext'
-import { Toaster } from "sonner"
-import Script from "next/script";
-
-
-
-
+import type {Metadata} from 'next';
+import {Work_Sans} from 'next/font/google';
+import './globals.css';
+import ClientLayoutWrapper from './ClientLayoutWrapper';
+import {CartProvider} from '@/context/CartContext';
+import {SearchProvider} from '@/context/SearchContext';
+import {Toaster} from 'sonner';
+import Script from 'next/script';
 
 const workSans = Work_Sans({
   subsets: ['latin'],
-  display: 'swap'
-})
-
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Meatopia - Premium Meats',
   description: 'Fresh, premium quality meats sourced locally',
-}
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={workSans.className}>
       <body className="font-sans">
@@ -36,14 +27,11 @@ export default function RootLayout({
             <ClientLayoutWrapper>
               <Toaster richColors />
               {children}
-              <Script
-          src="https://js.paystack.co/v1/inline.js"
-          strategy="afterInteractive"
-        />
+              
             </ClientLayoutWrapper>
           </SearchProvider>
         </CartProvider>
       </body>
     </html>
-  )
+  );
 }

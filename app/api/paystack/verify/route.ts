@@ -1,48 +1,75 @@
-import nodemailer from "nodemailer"
+// app/api/verify-payment/route.ts
+
 import { NextResponse } from "next/server"
 import { CartItem } from "@/context/CartContext"
-import { transporter } from "@/lib/mailer"
+import { getTransporter } from "@/lib/mailer"
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json()
+    const transporter = getTransporter()
 
-    const { reference, cart, formData, total, deliveryMethod } = data
+    const body = await req.json()
+    const { reference, cart, formData, total, deliveryMethod } = body
 
     if (!reference) {
-      return NextResponse.json({ success: false, message: "No payment reference" }, { status: 400 })
+      return NextResponse.json(
+        { success: false, message: "Missing payment reference" },
+        { status: 400 }
+      )
     }
 
-    // 🔐 VERIFY PAYMENT WITH PAYSTACK
-    const verify = await fetch(
+    // VERIFY TRANSACTION WITH PAYSTACK
+    const verifyRes = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
         },
       }
     )
 
-    const verifyData = await verify.json()
+    const verifyData = await verifyRes.json()
 
-    if (verifyData.data.status !== "success") {
-      return NextResponse.json({ success: false, message: "Payment not verified" })
+    console.log("PAYSTACK VERIFY:", verifyData)
+    console.log("REFERENCE:", reference)
+    console.log("VERIFY DATA:", verifyData)
+
+    // CHECK PAYSTACK RESPONSE
+    if (!verifyData.status || verifyData.data?.status !== "success") {
+      console.log("PAYSTACK VERIFY FAILED:", verifyData);
+      return NextResponse.json({
+        success: false,
+        message: "Payment not verified",
+      })
     }
 
+    // CHECK AMOUNT (PAYSTACK RETURNS KOBO)
+    const paidAmount = verifyData.data.amount / 100
 
-    // FORMAT ITEMS
-    const itemsHTML = cart.map((item: CartItem) => `
+    if (paidAmount !== total) {
+      console.log("Amount mismatch:", paidAmount, total)
+
+      return NextResponse.json({
+        success: false,
+        message: "Amount mismatch",
+      })
+    }
+
+    // FORMAT CART ITEMS
+    const itemsHTML = cart
+      .map(
+        (item: CartItem) => `
       <tr>
         <td>${item.name}</td>
         <td>${item.weight}</td>
         <td>${item.quantity}</td>
         <td>₦${(item.unitPrice * item.quantity).toLocaleString()}</td>
       </tr>
-    `).join("")
+    `
+      )
+      .join("")
 
-    //  BUSINESS EMAIL
+    // BUSINESS EMAIL
     await transporter.sendMail({
       from: `"Meatopia Orders" <${process.env.EMAIL_USER}>`,
       to: process.env.BUSINESS_EMAIL,
@@ -59,7 +86,7 @@ export async function POST(req: Request) {
         </p>
 
         <h3>Delivery</h3>
-        <p>Method: ${deliveryMethod}</p>
+        <p>${deliveryMethod}</p>
 
         <h3>Order Items</h3>
         <table border="1" cellpadding="8">
@@ -75,21 +102,21 @@ export async function POST(req: Request) {
         <h3>Total Paid</h3>
         <strong>₦${total.toLocaleString()}</strong>
 
-        <p><strong>Reference:</strong> ${reference}</p>
-      `
+        <p>Reference: ${reference}</p>
+      `,
     })
 
-    //  CUSTOMER CONFIRMATION EMAIL
+    // CUSTOMER EMAIL
     await transporter.sendMail({
       from: `"Meatopia" <${process.env.EMAIL_USER}>`,
       to: formData.email,
       subject: "Your Order is Confirmed 🥩",
       html: `
-        <h2>Thank You For Your Order!</h2>
+        <h2>Thank you for your order!</h2>
 
         <p>Hi ${formData.firstName},</p>
 
-        <p>Your payment was successful and your order is being prepared.</p>
+        <p>Your payment was successful and we have received your order.</p>
 
         <h3>Order Summary</h3>
         <table border="1" cellpadding="8">
@@ -106,16 +133,22 @@ export async function POST(req: Request) {
 
         <p>Delivery Method: ${deliveryMethod}</p>
 
-        <p>We’ll contact you shortly for delivery updates.</p>
+        <p>We will contact you soon for delivery updates.</p>
 
         <p>— Meatopia Team 🥩</p>
-      `
+      `,
     })
 
-    return NextResponse.json({ success: true })
-
+    return NextResponse.json({
+      success: true,
+      message: "Payment verified and order processed",
+    })
   } catch (error) {
-    console.error("Order Error:", error)
-    return NextResponse.json({ success: false }, { status: 500 })
+    console.error("ORDER PROCESS ERROR:", error)
+
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    )
   }
 }

@@ -1,51 +1,95 @@
-"use client"
+'use client';
 
-type PayButtonProps = {
-  email: string
-  amount: number
-  disabled?: boolean
-  metadata?: any
-  onSuccess: (ref: any) => void
+import Script from 'next/script';
+
+type PaystackSuccessResponse = {
+  reference: string;
+  status: string;
+  trans?: string;
+  transaction?: string;
+  message?: string;
+};
+
+type PaystackPopType = {
+  setup: (options: {
+    key: string;
+    email: string;
+    amount: number;
+    currency: string;
+    metadata?: Record<string, unknown>;
+    callback: (response: PaystackSuccessResponse) => void;
+    onClose: () => void;
+  }) => {
+    openIframe: () => void;
+  };
+};
+
+declare global {
+  interface Window {
+    PaystackPop?: PaystackPopType;
+  }
 }
 
+type Props = {
+  paystackKey: string;
+  email: string;
+  amount: number;
+  onSuccess: (ref: PaystackSuccessResponse) => void;
+  disabled?: boolean;
+  metadata?: Record<string, unknown>;
+};
+
 export default function PayButton({
+  paystackKey,
   email,
   amount,
+  onSuccess,
   disabled,
   metadata,
-  onSuccess
-}: PayButtonProps) {
+}: Props) {
+  const payWithPaystack = (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
 
-  const handlePayment = () => {
-    if (!(window as any).PaystackPop) {
-      alert("Paystack not loaded")
-      return
+    if (!window.PaystackPop) {
+      alert('Payment system not ready. Refresh page.');
+      return;
     }
 
-    const handler = (window as any).PaystackPop.setup({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+    const handler = window.PaystackPop.setup({
+      key: paystackKey,
       email,
       amount,
-      currency: "NGN",
+      currency: 'NGN',
       metadata,
-      callback: function (response: any) {
-        onSuccess(response)
-      },
-      onClose: function () {
-        alert("Payment cancelled")
-      }
-    })
 
-    handler.openIframe()
-  }
+      callback: function (response) {
+        onSuccess(response);
+      },
+
+      onClose: function () {
+        alert('Transaction was not completed');
+      },
+    });
+
+    handler.openIframe();
+  };
 
   return (
-    <button
-      onClick={handlePayment}
-      disabled={disabled}
-      className="w-full bg-primary py-4 rounded-lg text-[#162210] font-black hover:opacity-90 disabled:opacity-40"
-    >
-      Pay ₦{(amount / 100).toLocaleString()}
-    </button>
-  )
+    <>
+      <Script
+        src="https://js.paystack.co/v1/inline.js"
+        strategy="afterInteractive"
+      />
+      <button
+        type="button"
+        onClick={payWithPaystack}
+        disabled={disabled}
+        className="w-full bg-primary py-4 rounded-lg text-[#162210] font-black hover:opacity-90 disabled:opacity-40"
+      >
+        Pay ₦{(amount / 100).toLocaleString()}
+      </button>
+    </>
+  );
 }
