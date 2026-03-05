@@ -36,6 +36,7 @@ export async function POST(req: Request) {
 
     // CHECK PAYSTACK RESPONSE
     if (!verifyData.status || verifyData.data?.status !== "success") {
+      console.log("PAYSTACK VERIFY FAILED:", verifyData);
       return NextResponse.json({
         success: false,
         message: "Payment not verified",
