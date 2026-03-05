@@ -30,13 +30,9 @@ export async function POST(req: Request) {
 
     const verifyData = await verifyRes.json()
 
-    console.log("PAYSTACK VERIFY:", verifyData)
-    console.log("REFERENCE:", reference)
-    console.log("VERIFY DATA:", verifyData)
 
     // CHECK PAYSTACK RESPONSE
     if (!verifyData.status || verifyData.data?.status !== "success") {
-      console.log("PAYSTACK VERIFY FAILED:", verifyData);
       return NextResponse.json({
         success: false,
         message: "Payment not verified",
@@ -47,7 +43,6 @@ export async function POST(req: Request) {
     const paidAmount = verifyData.data.amount / 100
 
     if (paidAmount !== total) {
-      console.log("Amount mismatch:", paidAmount, total)
 
       return NextResponse.json({
         success: false,
