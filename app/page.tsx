@@ -16,7 +16,6 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const { searchTerm } = useSearch();
-  console.log("Page sees searchTerm:", searchTerm);
 
 
   // Filter products by category
@@ -32,7 +31,6 @@ export default function Home() {
 
   // Search filter
   if (searchTerm.trim() !== "") {
-    console.log(searchTerm);
     result = result.filter((product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
