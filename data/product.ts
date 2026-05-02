@@ -367,7 +367,7 @@ export const products: Product[] = [
   },
   {
     id: "chicken",
-    name: "Chicken",
+    name: "Chicken Mix",
     category: "Chicken",
     price: 5400,
     description: "Fresh whole chicken, fully dressed and ready to cook | Per Kg",
