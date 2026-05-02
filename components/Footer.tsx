@@ -67,7 +67,7 @@ export default function Footer (){
                 </li>
                 <li>
                   <a 
-                      className="hover:text-primary transition-colors text-blue-600" 
+                      className="hover:text-primary transition-colors" 
                       href="https://maps.app.goo.gl/dcXLrpHiSErRiMNV6"
                       target="_blank" 
                       rel="noopener noreferrer"
