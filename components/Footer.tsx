@@ -52,28 +52,29 @@ export default function Footer (){
             </div>
             <div>
               <h4 className="font-bold mb-4 uppercase text-xs tracking-widest text-primary">
-                Support
+                Get in Touch
               </h4>
               <ul className="flex flex-col gap-2 text-sm text-[#6f8961]">
                 <li>
-                  <a className="hover:text-primary transition-colors" href="#">
-                    Delivery Coverage
+                  <a  href="tel:+2348151780267" className="hover:text-primary transition-colors">
+                    0815 178 0267
                   </a>
                 </li>
                 <li>
-                  <a className="hover:text-primary transition-colors" href="#">
-                    Refund Policy
+                  <a href="mailto:Meatopia.ng@gmail.com" className="hover:text-primary transition-colors">
+                      Meatopia.ng@gmail.com
                   </a>
                 </li>
                 <li>
-                  <a className="hover:text-primary transition-colors" href="#">
-                    Contact Us
+                  <a 
+                      className="hover:text-primary transition-colors text-blue-600" 
+                      href="https://maps.app.goo.gl/dcXLrpHiSErRiMNV6"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      >
+                      No 18, Kajola Bus Stop, Beside Elife Pharmacy, Agbowo, Ibadan
                   </a>
-                </li>
-                <li>
-                  <a className="hover:text-primary transition-colors" href="#">
-                    FAQ
-                  </a>
+
                 </li>
               </ul>
             </div>
