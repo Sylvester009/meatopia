@@ -7,6 +7,57 @@ import {useCart} from '@/context/CartContext';
 import PayButton from '@/components/PaystackButton';
 import {toast} from 'sonner';
 
+const deliveryLocations = [
+  {
+    label: 'Oluyole/Ringroad',
+    fee: 3500,
+  },
+  {
+    label: 'Sango/Ashi',
+    fee: 2000,
+  },
+  {
+    label: 'Bodija/Oshuntokun/Awolowo',
+    fee: 2500,
+  },
+  {
+    label: 'Akobo (₦2,500)',
+    fee: 2500,
+  },
+  {
+    label: 'Akobo (₦3,000)',
+    fee: 3000,
+  },
+  {
+    label: 'Akobo Ojuirin',
+    fee: 3200,
+  },
+  {
+    label: 'Ojoo',
+    fee: 2000,
+  },
+  {
+    label: 'Elebu/Challenge',
+    fee: 3800,
+  },
+  {
+    label: 'Agbowo/UI/Orogun',
+    fee: 1000,
+  },
+  {
+    label: 'Jericho/Aleshinloye',
+    fee: 3000,
+  },
+  {
+    label: 'Eleyele',
+    fee: 2500,
+  },
+  {
+    label: 'Ologuneru',
+    fee: 3000,
+  },
+];
+
 type PaystackSuccessResponse = {
   reference: string;
   status: string;
@@ -18,8 +69,12 @@ type PaystackSuccessResponse = {
 export default function CheckoutPage() {
   const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'home'>(
-    'home',
+  'home',
   );
+  const [selectedLocation, setSelectedLocation] = useState(
+  deliveryLocations[0],
+  );
+  
   const [verifying, setVerifying] = useState(false);
   const [paymentStatus, __setPaymentStatus] = useState<'pending' | 'success'>(
     'pending',
@@ -56,7 +111,12 @@ export default function CheckoutPage() {
   const subtotal = totalPrice;
 
   const deliveryFee =
-    cart.length === 0 ? 0 : deliveryMethod === 'home' ? 1500 : 0;
+    cart.length === 0 
+    ? 0
+    : deliveryMethod === 'home'
+    ? selectedLocation.fee
+    : 0;
+  
   const total = totalPrice + deliveryFee;
   const totalAmount = total * 100;
   const customerEmail = formData.email || 'customer@email.com';
@@ -84,6 +144,9 @@ export default function CheckoutPage() {
           cart,
           formData,
           deliveryMethod,
+          deliveryLocation:
+            deliveryMethod === 'home' ? selectedLocation.label : 'Store Pickup',
+          deliveryFee,
           total,
           reference: ref.reference,
         }),
@@ -495,11 +558,33 @@ export default function CheckoutPage() {
                             Home Delivery
                           </p>
                           <p className="text-xs text-[#6f8961]">
-                            1-3 Business Days • ₦1,500 fee
+                            1–3 Business Days • Delivery fee based on location
                           </p>
+                          {deliveryMethod === 'home' && (
+                    <div className="mt-4">
+                      <select
+                        value={selectedLocation.label}
+                        onChange={e => {
+                          const location = deliveryLocations.find(
+                            loc => loc.label === e.target.value,
+                          );
+                          if (location) {
+                            setSelectedLocation(location);
+                          }
+                        }}
+                        className="w-full bg-[#f2f4f0] rounded-lg px-4 py-3 text-sm border border-[#dfe6db] focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                        {deliveryLocations.map(location => (
+                          <option key={location.label} value={location.label}>
+                            {location.label} - ₦{location.fee.toLocaleString()}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                         </div>
                       </div>
-                      <div className="font-black text-sm">₦1,500</div>
+                      <div className="font-black text-sm">₦{selectedLocation.fee.toLocaleString()}</div>
                     </div>
                   </label>
 
