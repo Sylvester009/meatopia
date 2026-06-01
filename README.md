@@ -118,7 +118,7 @@ The platform was built using a mobile-first approach with:
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/meatopia.git
+git clone https://github.com/Sylvester009/meatopia.git
 cd meatopia
 ```
 
