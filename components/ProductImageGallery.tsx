@@ -1,7 +1,8 @@
-// components/ProductImageGallery.tsx
-"use client";
+'use client';
 
-import { useState } from 'react';
+import {useState} from 'react';
+import {ChevronLeft, ChevronRight} from 'lucide-react';
+import Image from 'next/image';
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -10,49 +11,107 @@ interface ProductImageGalleryProps {
   tagColor?: string;
 }
 
-export default function ProductImageGallery({ images, productName, tag }: ProductImageGalleryProps) {
+export default function ProductImageGallery({
+  images,
+  productName,
+  tag,
+}: ProductImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  // If no images, use placeholder
+  const displayImages =
+    images.filter(img => img && img.trim() !== '').length > 0
+      ? images.filter(img => img && img.trim() !== '')
+      : ['/placeholder-product.jpg'];
+
+  const nextImage = () => {
+    setSelectedImage(prev => (prev + 1) % displayImages.length);
+  };
+
+  const prevImage = () => {
+    setSelectedImage(
+      prev => (prev - 1 + displayImages.length) % displayImages.length,
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full bg-white rounded-xl overflow-hidden shadow-sm aspect-4/3 relative">
+      {/* Main Image */}
+      <div
+        className="relative w-full aspect-square bg-gray-100 rounded-xl overflow-hidden group"
+        onMouseEnter={() => setIsZoomed(true)}
+        onMouseLeave={() => setIsZoomed(false)}
+      >
         {tag && (
-          <div className="absolute top-4 left-4 bg-primary text-[#162210] font-bold text-xs uppercase px-3 py-1 rounded-full z-10">
+          <div className="absolute top-4 left-4 z-10 bg-primary text-[#162210] font-bold text-xs uppercase px-3 py-1.5 rounded-full">
             {tag}
           </div>
         )}
-        <div
-          className="w-full h-full bg-center bg-no-repeat bg-cover"
-          style={{ backgroundImage: `url("${images[selectedImage]}")` }}
-          aria-label={`High resolution photo of ${productName}`}
-        ></div>
-      </div>
-      <div className="grid grid-cols-4 gap-4">
-        {images.slice(0, 3).map((image, index) => (
-          <div
-            key={index}
-            onClick={() => setSelectedImage(index)}
-            className={`aspect-square bg-center bg-no-repeat bg-cover rounded-lg cursor-pointer transition-all ${
-              selectedImage === index 
-                ? 'border-2 border-primary' 
-                : 'border-2 border-transparent hover:border-primary/50'
+
+        <div className="relative w-full h-full">
+          <Image
+            src={displayImages[selectedImage]}
+            alt={`${productName} - Image ${selectedImage + 1}`}
+            fill
+            className={`object-cover transition-transform duration-300 ${
+              isZoomed ? 'scale-110' : 'scale-100'
             }`}
-            style={{ backgroundImage: `url("${image}")` }}
-            aria-label={`Thumbnail ${index + 1} for ${productName}`}
-          ></div>
-        ))}
-        {/* {images.length > 3 && (
-          <div
-            onClick={() => setSelectedImage(3)}
-            className="aspect-square bg-center bg-no-repeat bg-cover rounded-lg hover:border-primary/50 border-2 border-transparent transition-all cursor-pointer flex items-center justify-center bg-black/40 relative overflow-hidden"
-            style={{ backgroundImage: `url("${images[3]}")` }}
-            aria-label={`More images of ${productName}`}
-          >
-            <span className="relative z-10 text-white font-bold">+{images.length - 3} More</span>
-            <div className="absolute inset-0 bg-black/40"></div>
+            priority
+          />
+        </div>
+
+        {/* Navigation Arrows - Only show if multiple images */}
+        {displayImages.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all opacity-0 group-hover:opacity-100"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
+          </>
+        )}
+
+        {/* Image Counter */}
+        {displayImages.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+            {selectedImage + 1} / {displayImages.length}
           </div>
-        )} */}
+        )}
       </div>
+
+      {/* Thumbnails */}
+      {displayImages.length > 1 && (
+        <div className="grid grid-cols-4 gap-3">
+          {displayImages.map((image, index) => (
+            <button
+              key={index}
+              onClick={() => setSelectedImage(index)}
+              className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                selectedImage === index
+                  ? 'border-primary shadow-md'
+                  : 'border-transparent hover:border-gray-300'
+              }`}
+            >
+              <Image
+                src={image}
+                alt={`${productName} thumbnail ${index + 1}`}
+                fill
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

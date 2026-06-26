@@ -6,7 +6,6 @@ import ClientLayoutWrapper from './ClientLayoutWrapper';
 import {CartProvider} from '@/context/CartContext';
 import {SearchProvider} from '@/context/SearchContext';
 import {Toaster} from 'sonner';
-import Script from 'next/script';
 
 const workSans = Work_Sans({
   subsets: ['latin'],
@@ -27,7 +26,6 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             <ClientLayoutWrapper>
               <Toaster richColors />
               {children}
-              
             </ClientLayoutWrapper>
           </SearchProvider>
         </CartProvider>

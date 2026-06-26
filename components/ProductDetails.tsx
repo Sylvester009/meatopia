@@ -1,212 +1,276 @@
 'use client';
 
-import {useState} from 'react';
-import {Product} from '@/data/product';
-import {CartItem, useCart} from '@/context/CartContext';
+import { useState } from 'react';
+import { Product } from '@/data/product';
+import { useCart } from '@/context/CartContext';
+import { 
+  Star, 
+  Minus, 
+  Plus, 
+  ShoppingBag, 
+  Truck, 
+  Snowflake,
+  Heart,
+  Share2,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 
 interface ProductDetailsProps {
   product: Product;
 }
 
-export default function ProductDetails({product}: ProductDetailsProps) {
+export default function ProductDetails({ product }: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'cooking' | 'nutrition'>(
-    'cooking',
-  );
-  const {addToCart} = useCart();
-
   const [selectedWeight, setSelectedWeight] = useState(
-    product.weightOptions?.[1] || product.weightOptions?.[0],
+    product.weightOptions?.[0] || null
   );
+  const [expandedSections, setExpandedSections] = useState({
+    description: true,
+    details: false,
+  });
+  
+  const { addToCart } = useCart();
 
+  // Calculate prices
   const basePrice = product.price;
-  const finalPrice = basePrice * selectedWeight.multiplier;
-  const totalPrice = (finalPrice * quantity).toFixed(2);
+  const unitPrice = selectedWeight ? basePrice * selectedWeight.multiplier : basePrice;
+  const totalPrice = unitPrice * quantity;
 
   const formatPrice = (price: number) => {
     return `₦${price.toFixed(2)}`;
   };
 
-  function handleAddToCart() {
-  if (!selectedWeight) return;
+  const handleAddToCart = () => {
+    if (!selectedWeight) return;
 
-  const adjustedPrice = product.price * selectedWeight.multiplier;
+    addToCart({
+      id: `${product.id}-${selectedWeight.label}`,
+      name: product.name,
+      image: selectedWeight.image || product.image,
+      basePrice: product.price,
+      unitPrice: unitPrice,
+      quantity: quantity,
+      weight: selectedWeight.label,
+    });
+  };
 
-  addToCart({
-    id: `${product.id}-${selectedWeight.label}`,
-    name: product.name,
-    image: selectedWeight.image || product.image,
-    basePrice: product.price,
-    unitPrice: adjustedPrice,
-    quantity: quantity,
-    weight: selectedWeight.label,
-  });
-}
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-primary font-bold tracking-widest text-xs uppercase">
-          Limited Reserve
-        </p>
-        <h1 className="text-[#131811] text-2xl lg:text-4xl font-black leading-tight tracking-tight">
-          {product.name}
-        </h1>
-        <div className="flex items-center gap-2 mt-2">
-          <div className="flex text-primary">
+      {/* Product Header */}
+      <div>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-primary font-semibold text-xs uppercase tracking-wider mb-1">
+              Premium Quality
+            </p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+              {product.name}
+            </h1>
+          </div>
+          <div className="flex gap-2">
+            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Save to favorites">
+              <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
+            </button>
+            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Share">
+              <Share2 className="w-5 h-5 text-gray-400 hover:text-primary transition-colors" />
+            </button>
+          </div>
+        </div>
+
+        {/* Rating */}
+        <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <span key={i} className="material-symbols-outlined text-sm">
-                star
-              </span>
+              <Star key={i} className="w-4 h-4 fill-primary text-primary" />
             ))}
           </div>
-          <span className="text-sm text-[#6f8961] font-medium">
-            ({product.reviewsCount || 0} reviews)
+          <span className="text-sm text-gray-500">
+            {product.reviewsCount || 0} reviews
           </span>
         </div>
       </div>
 
-      <div className="flex items-baseline gap-2">
-        <span className="text-xl lg:text-2xl font-black text-[#131811]">
-          {formatPrice(product.price)}
+      {/* Price */}
+      <div className="flex items-baseline gap-3">
+        <span className="text-3xl font-bold text-gray-900">
+          {formatPrice(unitPrice)}
         </span>
-        <span className="text-base uppercase font-bold text-[#6f8961]">
-          / Kg
+        <span className="text-sm text-gray-500 font-medium">
+          / {selectedWeight?.label || 'kg'}
         </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        <label className="text-xs uppercase font-bold text-[#6f8961]">
-          Select Weight
-        </label>
-
-        <select
-          value={selectedWeight?.label || ''}
-          onChange={e => {
-            // Only try to find if weightOptions exists
-            const option = product?.weightOptions?.find(
-              w => w.label === e.target.value,
-            );
-            if (option) setSelectedWeight(option);
-          }}
-          className="h-12 rounded-lg border border-[#6f8961] px-3 font-medium w-3/5"
-        >
-          {product?.weightOptions?.map(weight => (
-            <option key={weight?.label} value={weight?.label}>
-              {weight?.label}
-            </option>
-          )) || <option value="">No weights available</option>}
-        </select>
+        {selectedWeight && selectedWeight.multiplier > 1 && (
+          <span className="text-sm text-gray-400 line-through">
+            {formatPrice(basePrice)} / kg
+          </span>
+        )}
       </div>
 
+      {/* Weight Selection */}
+      {product.weightOptions && product.weightOptions.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Select Weight
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {product.weightOptions.map((weight) => (
+              <button
+                key={weight.label}
+                onClick={() => setSelectedWeight(weight)}
+                className={`px-4 py-3 rounded-lg border-2 text-center transition-all ${
+                  selectedWeight?.label === weight.label
+                    ? 'border-primary bg-primary/5 text-primary font-semibold shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                }`}
+              >
+                <span className="text-sm">{weight.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tags/Badges */}
       {product.tags && product.tags.length > 0 && (
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {product.tags.map((tag, index) => (
-            <div
+            <span
               key={index}
-              className={`flex h-8 items-center justify-center gap-x-2 rounded-lg px-4 ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
                 tag.color === 'primary'
-                  ? 'bg-primary border border-primary'
-                  : 'bg-[#f2f4f0]'
+                  ? 'bg-primary/10 text-primary border border-primary/20'
+                  : 'bg-gray-100 text-gray-600'
               }`}
             >
-              <span className="material-symbols-outlined text-sm text-[#131811]">
-                {tag.icon}
-              </span>
-              <p className="text-[#131811] text-xs font-bold uppercase tracking-wider">
-                {tag.label}
-              </p>
-            </div>
+              {tag.label}
+            </span>
           ))}
         </div>
       )}
 
-      <div className="prose">
-        <p className="text-[#131811] leading-relaxed">{product.description}</p>
+      {/* Description - Collapsible */}
+      <div className="border-t border-gray-100 pt-4">
+        <button
+          onClick={() => toggleSection('description')}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <span className="font-semibold text-gray-900">Description</span>
+          {expandedSections.description ? (
+            <ChevronUp className="w-4 h-4 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-400" />
+          )}
+        </button>
+        {expandedSections.description && (
+          <p className="mt-3 text-gray-600 leading-relaxed text-sm">
+            {product.description}
+          </p>
+        )}
       </div>
 
-      {/* Purchase Actions */}
-      <div className="flex flex-col gap-4 pt-4 border-t border-[#e5e7e5]">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center bg-[#f2f4f0] rounded-lg h-12 px-2">
+      {/* Additional Details - Collapsible */}
+      {product.details && (
+        <div className="border-t border-gray-100 pt-4">
+          <button
+            onClick={() => toggleSection('details')}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <span className="font-semibold text-gray-900">Product Details</span>
+            {expandedSections.details ? (
+              <ChevronUp className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+          {expandedSections.details && (
+            <div className="mt-3 space-y-3">
+              {product.details.cookingTips && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Cooking Tips</h4>
+                  <ul className="space-y-1.5">
+                    {product.details.cookingTips.map((tip, index) => (
+                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {product.details.nutritionalInfo && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Nutritional Information</h4>
+                  <ul className="space-y-1.5">
+                    {product.details.nutritionalInfo.map((info, index) => (
+                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        {info}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Purchase Section */}
+      <div className="border-t border-gray-100 pt-6 mt-2">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Quantity Selector */}
+          <div className="w-auto flex items-center bg-gray-50 rounded-xl border border-gray-200">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-md transition-colors"
+              className="px-4 py-3 hover:bg-gray-100 rounded-l-xl transition-colors"
+              aria-label="Decrease quantity"
             >
-              <span className="material-symbols-outlined">remove</span>
+              <Minus className="w-4 h-4 text-gray-600" />
             </button>
-            <span className="w-12 text-center font-bold text-lg">
+            <span className="w-full sm:w-12 text-center font-semibold text-gray-900">
               {quantity}
             </span>
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-md transition-colors"
+              className="px-4 py-3 hover:bg-gray-100 rounded-r-xl transition-colors"
+              aria-label="Increase quantity"
             >
-              <span className="material-symbols-outlined">add</span>
+              <Plus className="w-4 h-4 text-gray-600" />
             </button>
           </div>
-          <div className="flex-1">
-            <p className="text-[10px] uppercase font-bold text-[#6f8961] mb-1">
-              Total Estimated
-            </p>
-            <p className="font-bold text-lg">₦{totalPrice}</p>
-          </div>
-        </div>
-        <button
-          onClick={handleAddToCart}
-          className="flex w-full items-center justify-center gap-3 rounded-lg h-14 bg-primary text-[#131811] text-lg font-black"
-        >
-          <span className="material-symbols-outlined">shopping_basket</span>
-          Add to Basket
-        </button>
 
-        <div className="flex items-center justify-center gap-4 lg:gap-6 mt-2">
-          <div className="flex items-center gap-2 text-[11px] font-bold text-[#6f8961] uppercase">
-            <span className="material-symbols-outlined text-lg">
-              local_shipping
+          {/* Add to Cart Button */}
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-gray-900 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            Add to Basket
+            <span className="text-sm font-normal text-gray-700 ml-1">
+              {formatPrice(totalPrice)}
             </span>
-            Next Day Delivery
+          </button>
+        </div>
+
+        {/* Shipping Info */}
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
+            <Truck className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-gray-600">Next Day Delivery</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-[#6f8961] uppercase">
-            <span className="material-symbols-outlined text-lg">ac_unit</span>
-            Chilled Shipping
+          <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
+            <Snowflake className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-gray-600">Chilled Shipping</span>
           </div>
         </div>
       </div>
-
-      {/* Info Tabs */}
-      {product.details && (
-        <div className="flex flex-col gap-1 pt-4">
-          <div className="border-b border-[#e5e7e5] py-4">
-            <div
-              className="flex justify-between items-center cursor-pointer"
-              onClick={() =>
-                setActiveTab(activeTab === 'cooking' ? 'nutrition' : 'cooking')
-              }
-            >
-              <span className="font-bold text-sm uppercase tracking-widest">
-                {activeTab === 'cooking' ? 'Cooking Tips' : 'Nutritional Info'}
-              </span>
-              <span className="material-symbols-outlined">
-                {activeTab === 'cooking' ? 'expand_less' : 'expand_more'}
-              </span>
-            </div>
-            {activeTab === 'cooking' && product.details.cookingTips && (
-              <div className="mt-4 text-sm text-[#6f8961] space-y-2">
-                {product.details.cookingTips.map((tip, index) => (
-                  <p key={index}>• {tip}</p>
-                ))}
-              </div>
-            )}
-            {activeTab === 'nutrition' && product.details.nutritionalInfo && (
-              <div className="mt-4 text-sm text-[#6f8961] space-y-2">
-                {product.details.nutritionalInfo.map((info, index) => (
-                  <p key={index}>• {info}</p>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

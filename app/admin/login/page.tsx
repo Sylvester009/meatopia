@@ -1,63 +1,65 @@
-// app/admin/login/page.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-
+import {useState} from 'react';
+import {useRouter} from 'next/navigation';
+import Image from 'next/image';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
     rememberMe: false,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   // app/admin/login/page.tsx - Updated handleSubmit function
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  // Simple validation
-  if (!formData.email || !formData.password) {
-    setError('Please fill in all fields');
-    setLoading(false);
-    return;
-  }
-
-  // Demo credentials
-  const validEmail = 'meatopia.ng@gmail.com';
-  const validPassword = 'admin123';
-
-  // Simulate API call
-  setTimeout(() => {
-    if (formData.email === validEmail && formData.password === validPassword) {
-      // Set localStorage for client-side checks
-      localStorage.setItem('adminLoggedIn', 'true');
-      
-      // Set cookie for middleware/server-side checks
-      document.cookie = "adminLoggedIn=true; path=/; max-age=86400; samesite=strict";
-      
-      // Redirect to dashboard
-      router.push('/admin/dashboard');
-      router.refresh(); // Refresh to trigger middleware
-    } else {
-      setError('Invalid email or password');
+    // Simple validation
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
       setLoading(false);
+      return;
     }
-  }, 1000);
-};
+
+    // Demo credentials
+    const validEmail = 'meatopia.ng@gmail.com';
+    const validPassword = 'admin123';
+
+    // Simulate API call
+    setTimeout(() => {
+      if (
+        formData.email === validEmail &&
+        formData.password === validPassword
+      ) {
+        // Set localStorage for client-side checks
+        localStorage.setItem('adminLoggedIn', 'true');
+
+        // Set cookie for middleware/server-side checks
+        document.cookie =
+          'adminLoggedIn=true; path=/; max-age=86400; samesite=strict';
+
+        // Redirect to dashboard
+        router.push('/admin/dashboard');
+        router.refresh(); // Refresh to trigger middleware
+      } else {
+        setError('Invalid email or password');
+        setLoading(false);
+      }
+    }, 1000);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
+    const {name, value, type, checked} = e.target;
+    setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -67,19 +69,16 @@ const handleSubmit = async (e: React.FormEvent) => {
       <header className="flex items-center justify-between border-b border-[#dfe6db] px-6 py-4 bg-white">
         <div className="flex items-center gap-3">
           <div className="size-6 bg-primary/70 rounded-lg flex items-center justify-center">
-                        <Image 
-                        src="https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg"
-                        alt="logo"
-                        width={100}
-                        height={100}
-                        className="rounded-lg"
-                        />
-                      </div>
+            <Image
+              src="https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg"
+              alt="logo"
+              width={100}
+              height={100}
+              className="rounded-lg"
+            />
+          </div>
           <h2 className="text-lg font-bold text-gray-800">Meatopia Admin</h2>
         </div>
-        <button className="px-4 py-2 bg-primary text-[#162210] text-sm font-bold rounded-lg hover:opacity-90 transition-opacity">
-          Support
-        </button>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
@@ -149,7 +148,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </span>
                   <input
                     name="password"
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Enter your password"
@@ -162,7 +161,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <span className="material-symbols-outlined">
-                      {showPassword ? "visibility_off" : "visibility"}
+                      {showPassword ? 'visibility_off' : 'visibility'}
                     </span>
                   </button>
                 </div>

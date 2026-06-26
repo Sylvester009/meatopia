@@ -1,44 +1,38 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import ProductCard from "@/components/productCards";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { products, categories, Product } from "@/data/product";
-import { useSearch } from "@/context/SearchContext";
-
-
+import {useState, useEffect, useMemo} from 'react';
+import ProductCard from '@/components/productCards';
+import {useInfiniteScroll} from '@/hooks/useInfiniteScroll';
+import {products, categories, Product} from '@/data/product';
+import {useSearch} from '@/context/SearchContext';
 
 const ITEMS_PER_PAGE = 8;
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("All Meats");
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Meats');
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { searchTerm } = useSearch();
-
+  const {searchTerm} = useSearch();
 
   // Filter products by category
   const filteredProducts = useMemo(() => {
-  let result = products;
+    let result = products;
 
-  // Category filter
-  if (selectedCategory !== "All Meats") {
-    result = result.filter(
-      (product) => product.category === selectedCategory
-    );
-  }
+    // Category filter
+    if (selectedCategory !== 'All Meats') {
+      result = result.filter(product => product.category === selectedCategory);
+    }
 
-  // Search filter
-  if (searchTerm.trim() !== "") {
-    result = result.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
+    // Search filter
+    if (searchTerm.trim() !== '') {
+      result = result.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
 
-  return result;
-}, [selectedCategory, searchTerm]);
-
+    return result;
+  }, [selectedCategory, searchTerm]);
 
   // Calculate total pages
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -70,7 +64,7 @@ export default function Home() {
   }, [filteredProducts]);
 
   // Use infinite scroll hook
-  const { loadMoreRef } = useInfiniteScroll({
+  const {loadMoreRef} = useInfiniteScroll({
     isLoading,
     hasMore,
     onLoadMore: loadMoreProducts,
@@ -99,14 +93,14 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-white p-2 rounded-xl border border-[#e2e8e2]">
             <div className="flex gap-2 flex-wrap">
-              {categories.map((category) => (
+              {categories.map(category => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors ${
                     selectedCategory === category
-                      ? "bg-primary text-[#162210] font-bold shadow-sm"
-                      : "bg-[#eef2ee] text-[#131811] hover:bg-[#e2e8e2]"
+                      ? 'bg-primary text-[#162210] font-bold shadow-sm'
+                      : 'bg-[#eef2ee] text-[#131811] hover:bg-[#e2e8e2]'
                   }`}
                 >
                   <span>{category}</span>
@@ -115,13 +109,13 @@ export default function Home() {
             </div>
             <div className="items-center gap-2 px-2 border-l border-[#e2e8e2] hidden md:flex">
               <span className="text-sm text-[#6f8961]">
-                Showing {displayedProducts.length} of {filteredProducts.length}{" "}
+                Showing {displayedProducts.length} of {filteredProducts.length}{' '}
                 products
               </span>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displayedProducts.map((product) => (
+            {displayedProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -141,9 +135,9 @@ export default function Home() {
 
             {!hasMore && displayedProducts.length > 0 && (
               <p className="text-[#6f8961] py-4">
-                You&apos;ve reached the end of{" "}
-                {selectedCategory === "All Meats"
-                  ? "all products"
+                You&apos;ve reached the end of{' '}
+                {selectedCategory === 'All Meats'
+                  ? 'all products'
                   : selectedCategory}
               </p>
             )}

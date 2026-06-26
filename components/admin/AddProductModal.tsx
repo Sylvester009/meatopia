@@ -1,330 +1,268 @@
-// components/admin/AddProductModal.tsx
-"use client";
+'use client';
 
-import { useState } from 'react';
+import {useState} from 'react';
+import {X, Plus, Trash2} from 'lucide-react';
 
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProduct: (product: unknown) => void;
+  onAddProduct: (product: any) => void;
 }
 
-export default function AddProductModal({ isOpen, onClose, onAddProduct }: AddProductModalProps) {
+export default function AddProductModal({
+  isOpen,
+  onClose,
+  onAddProduct,
+}: AddProductModalProps) {
   const [formData, setFormData] = useState({
+    id: '',
     name: '',
     category: '',
     price: '',
-    unit: 'kg',
     description: '',
-    sku: '',
-    stock: '',
+    image: '',
+    tag: '',
+    reviewsCount: 0,
+    weightOptions: [{label: '1kg', multiplier: 1, image: ''}],
+    tags: [{label: '', icon: '', color: 'primary'}],
+    details: {cookingTips: [''], nutritionalInfo: ['']},
   });
-
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-
-  const categories = [
-    'Beef',
-    'Goat Meat',
-    'Chicken',
-    'Turkey',
-    'Rabbit',
-    'Meat Sharing',
-    'Premium Beef',
-    'Organic Chicken',
-    'Tender Lamb',
-    'Artisan Sausages'
-  ];
-
-  const units = [
-    { value: 'kg', label: 'Per Kilogram (/kg)' },
-    { value: 'piece', label: 'Per Piece (/pc)' },
-    { value: 'box', label: 'Per Box (/box)' },
-    { value: 'pack', label: 'Per Pack (/pack)' },
-  ];
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const generateSKU = () => {
-    const categoryCode = formData.category.slice(0, 3).toUpperCase();
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `MEA-${randomNum}-${categoryCode}`;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newProduct = {
-      // eslint-disable-next-line react-hooks/purity
-      id: Date.now(),
-      name: formData.name,
-      category: formData.category,
-      price: parseInt(formData.price) || 0,
-      description: formData.description,
-      weightUnit: formData.unit,
-      sku: formData.sku || generateSKU(),
-      stock: parseInt(formData.stock) || 0,
-      image: imagePreview || 'https://images.unsplash.com/photo-1604503468505-6f3d5a7353e5?w=800',
-      tag: 'New',
-      tagColor: 'primary',
-      reviewsCount: 0,
-      tags: [
-        { icon: "eco", label: "Grass-fed", color: "primary" },
-        { icon: "location_on", label: "Local Farm" },
-      ],
-      details: {
-        cookingTips: [
-          "Season generously with sea salt and cracked pepper.",
-          "Sear in a cast-iron skillet for 3-4 minutes per side for Medium-Rare.",
-          "Let rest for at least 5 minutes before slicing."
-        ],
-        nutritionalInfo: [
-          "Protein: 25g per 100g",
-          "Fat: 15g per 100g",
-          "Calories: 250 per 100g",
-        ]
-      }
-    };
-
-    onAddProduct(newProduct);
-    handleClose();
-  };
-
-  const handleClose = () => {
-    setFormData({
-      name: '',
-      category: '',
-      price: '',
-      unit: 'kg',
-      description: '',
-      sku: '',
-      stock: '',
-    });
-    setImageFile(null);
-    setImagePreview('');
-    onClose();
-  };
 
   if (!isOpen) return null;
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newProduct = {
+      ...formData,
+      id: formData.id || `product-${Date.now()}`,
+      price: parseFloat(formData.price),
+      reviewsCount: Number(formData.reviewsCount),
+    };
+    onAddProduct(newProduct);
+  };
+
+  const addWeightOption = () => {
+    setFormData(prev => ({
+      ...prev,
+      weightOptions: [
+        ...prev.weightOptions,
+        {label: '', multiplier: 1, image: ''},
+      ],
+    }));
+  };
+
+  const removeWeightOption = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      weightOptions: prev.weightOptions.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateWeightOption = (
+    index: number,
+    field: string,
+    value: string | number,
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      weightOptions: prev.weightOptions.map((opt, i) =>
+        i === index ? {...opt, [field]: value} : opt,
+      ),
+    }));
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto p-4 md:p-8 animate-in fade-in duration-200">
-      {/* Modal Content Container */}
-      <div className="relative w-full max-w-160 bg-white rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-2 duration-300">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[#dfe6db]">
-          <h1 className="text-[#131811] tracking-light text-2xl font-bold leading-tight">Add New Product</h1>
-          <button 
-            onClick={handleClose}
-            className="text-[#6f8961] hover:text-[#131811] transition-colors"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Add New Product</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <span className="material-symbols-outlined">close</span>
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
-        {/* Modal Body (Form) */}
-        <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* Basic Info Grid */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col flex-1">
-              <label className="text-[#131811] text-sm font-semibold pb-2">Product Name *</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Name *
+              </label>
               <input
-                required
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] h-12 placeholder:text-[#6f8961] px-4 text-base"
-                placeholder="e.g. Boneless Beef"
                 type="text"
-              />
-            </div>
-            
-            <div className="flex flex-col flex-1">
-              <label className="text-[#131811] text-sm font-semibold pb-2">Category *</label>
-              <div className="relative">
-                <select
-                  required
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="appearance-none w-full rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] h-12 p-4 text-base cursor-pointer"
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-[#6f8961]">expand_more</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing & Unit */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col flex-1">
-              <label className="text-[#131811] text-sm font-semibold pb-2">Price (₦) *</label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-[#6f8961]">₦</span>
-                <input
-                  required
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="w-full rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] h-12 placeholder:text-[#6f8961] pl-8 pr-4 text-base"
-                  placeholder="0.00"
-                  type="number"
-                  min="0"
-                />
-              </div>
-            </div>
-            
-            <div className="flex flex-col flex-1">
-              <label className="text-[#131811] text-sm font-semibold pb-2">Unit *</label>
-              <div className="relative">
-                <select
-                  required
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleInputChange}
-                  className="appearance-none w-full rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] h-12 p-4 text-base cursor-pointer"
-                >
-                  {units.map((unit) => (
-                    <option key={unit.value} value={unit.value}>{unit.label}</option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-[#6f8961]">expand_more</span>
-              </div>
-            </div>
-          </div>
-
-          {/* SKU & Stock */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col flex-1">
-              <label className="text-[#131811] text-sm font-semibold pb-2">SKU</label>
-              <div className="flex gap-2">
-                <input
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleInputChange}
-                  className="flex-1 rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] h-12 placeholder:text-[#6f8961] px-4 text-base"
-                  placeholder="MEA-001-BEEF"
-                  type="text"
-                />
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, sku: generateSKU() }))}
-                  className="px-4 bg-[#f2f4f0] hover:bg-[#e2e8e2] text-[#6f8961] rounded-lg font-medium"
-                >
-                  Generate
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex flex-col flex-1">
-              <label className="text-[#131811] text-sm font-semibold pb-2">Initial Stock *</label>
-              <input
                 required
-                name="stock"
-                value={formData.stock}
-                onChange={handleInputChange}
-                className="w-full rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] h-12 placeholder:text-[#6f8961] px-4 text-base"
-                placeholder="0"
+                value={formData.name}
+                onChange={e =>
+                  setFormData(prev => ({...prev, name: e.target.value}))
+                }
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category *
+              </label>
+              <select
+                required
+                value={formData.category}
+                onChange={e =>
+                  setFormData(prev => ({...prev, category: e.target.value}))
+                }
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+              >
+                <option value="">Select Category</option>
+                <option value="Beef">Beef</option>
+                <option value="Chicken">Chicken</option>
+                <option value="Goat Meat">Goat Meat</option>
+                <option value="Turkey">Turkey</option>
+                <option value="Rabbit">Rabbit</option>
+                <option value="Meat Sharing">Meat Sharing</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price (₦) *
+              </label>
+              <input
                 type="number"
-                min="0"
+                required
+                value={formData.price}
+                onChange={e =>
+                  setFormData(prev => ({...prev, price: e.target.value}))
+                }
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tag
+              </label>
+              <input
+                type="text"
+                value={formData.tag}
+                onChange={e =>
+                  setFormData(prev => ({...prev, tag: e.target.value}))
+                }
+                placeholder="e.g. Popular, Premium"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
             </div>
           </div>
 
-          {/* Description */}
-          <div className="flex flex-col w-full">
-            <label className="text-[#131811] text-sm font-semibold pb-2">Description *</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description *
+            </label>
             <textarea
               required
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className="w-full rounded-lg text-[#131811] focus:ring-2 focus:ring-primary focus:border-primary border border-[#dfe6db] bg-[#f2f4f0] min-h-25 placeholder:text-[#6f8961] p-4 text-base"
-              placeholder="Describe the meat cut, origin, or preparation details..."
               rows={3}
+              value={formData.description}
+              onChange={e =>
+                setFormData(prev => ({...prev, description: e.target.value}))
+              }
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none"
             />
           </div>
 
-          {/* Image Upload */}
-          <div className="flex flex-col w-full">
-            <label className="text-[#131811] text-sm font-semibold pb-2">Product Image</label>
-            <div className="relative">
-              {imagePreview ? (
-                <div className="relative">
-                  <div 
-                    className="w-full h-48 rounded-xl bg-cover bg-center"
-                    style={{ backgroundImage: `url(${imageFile})` }}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Image URL
+            </label>
+            <input
+              type="url"
+              value={formData.image}
+              onChange={e =>
+                setFormData(prev => ({...prev, image: e.target.value}))
+              }
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+            />
+          </div>
+
+          {/* Weight Options */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Weight Options
+              </label>
+              <button
+                type="button"
+                onClick={addWeightOption}
+                className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
+              >
+                <Plus className="w-4 h-4" /> Add
+              </button>
+            </div>
+            <div className="space-y-3">
+              {formData.weightOptions.map((option, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    placeholder="Label (e.g. 1kg)"
+                    value={option.label}
+                    onChange={e =>
+                      updateWeightOption(index, 'label', e.target.value)
+                    }
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Multiplier"
+                    step="0.1"
+                    value={option.multiplier}
+                    onChange={e =>
+                      updateWeightOption(
+                        index,
+                        'multiplier',
+                        parseFloat(e.target.value),
+                      )
+                    }
+                    className="w-24 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
+                  />
+                  <input
+                    type="url"
+                    placeholder="Image URL"
+                    value={option.image}
+                    onChange={e =>
+                      updateWeightOption(index, 'image', e.target.value)
+                    }
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setImagePreview('');
-                      setImageFile(null);
-                    }}
-                    className="absolute top-2 right-2 size-8 bg-red-500 text-white rounded-full flex items-center justify-center"
+                    onClick={() => removeWeightOption(index)}
+                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-sm">delete</span>
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              ) : (
-                <label className="border-2 border-dashed border-[#dfe6db] rounded-xl p-8 flex flex-col items-center justify-center bg-[#f2f4f0] hover:bg-primary/5 hover:border-primary transition-colors cursor-pointer group">
-                  <div className="size-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-3xl">cloud_upload</span>
-                  </div>
-                  <p className="text-[#131811] font-medium mb-1">Click to upload or drag and drop</p>
-                  <p className="text-[#6f8961] text-xs">PNG, JPG or WEBP (max. 5MB)</p>
-                  <input
-                    name="image"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
+              ))}
             </div>
           </div>
-        </form>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-3 px-8 py-6 border-t border-[#dfe6db] bg-[#f2f4f0]">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-6 py-2.5 rounded-lg text-sm font-bold text-[#131811] hover:bg-[#dfe6db] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            className="px-8 py-2.5 rounded-lg bg-primary text-[#162210] text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
-          >
-            Add Product
-          </button>
-        </div>
+          {/* Submit */}
+          <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-6 py-2.5 bg-primary text-[#162210] font-bold rounded-xl hover:bg-primary/90 transition-all shadow-sm hover:shadow-md"
+            >
+              Add Product
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
