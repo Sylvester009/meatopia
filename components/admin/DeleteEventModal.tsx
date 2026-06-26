@@ -1,22 +1,21 @@
 'use client';
 
 import {X, AlertTriangle} from 'lucide-react';
-import Image from 'next/image';
 
-interface DeleteProductModalProps {
+interface DeleteEventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  product: any;
+  event: any;
 }
 
-export default function DeleteProductModal({
+export default function DeleteEventModal({
   isOpen,
   onClose,
   onConfirm,
-  product,
-}: DeleteProductModalProps) {
-  if (!isOpen || !product) return null;
+  event,
+}: DeleteEventModalProps) {
+  if (!isOpen || !event) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -34,36 +33,36 @@ export default function DeleteProductModal({
             </button>
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
-            Delete Product
-          </h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Event</h3>
           <p className="text-gray-600 mb-6">
             Are you sure you want to delete{' '}
-            <span className="font-semibold text-gray-900">
-              "{product.name}"
-            </span>
+            <span className="font-semibold text-gray-900">"{event.title}"</span>
             ? This action cannot be undone.
           </p>
 
-          {/* Product Preview */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-6 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-lg bg-gray-200 overflow-hidden shrink-0">
-              {product.image && (
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
+          {/* Event Preview */}
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <p className="font-medium text-gray-900">{event.title}</p>
+            <p className="text-sm text-gray-500">{event.description}</p>
+            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+              <span>
+                {event.date
+                  ? new Date(event.date).toLocaleDateString()
+                  : 'No date'}
+              </span>
+              {event.status && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    event.status === 'active'
+                      ? 'bg-green-100 text-green-800'
+                      : event.status === 'upcoming'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {event.status}
+                </span>
               )}
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">{product.name}</p>
-              <p className="text-sm text-gray-500">{product.category}</p>
-              <p className="text-sm text-gray-500">
-                ₦{product.price?.toLocaleString()}
-              </p>
             </div>
           </div>
 
@@ -80,7 +79,7 @@ export default function DeleteProductModal({
               onClick={onConfirm}
               className="flex-1 px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-sm hover:shadow-md"
             >
-              Delete Product
+              Delete Event
             </button>
           </div>
         </div>

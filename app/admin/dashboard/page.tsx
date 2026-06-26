@@ -1,239 +1,423 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/admin/dashboard/page.tsx
-"use client";
+'use client';
 
+import {useState, useMemo} from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  Package,
+  ShoppingBag,
+  Calendar,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  MoreVertical,
+} from 'lucide-react';
+import {products} from '@/data/product';
+import AddEventModal from '@/components/admin/AddEventModal';
 import AddProductModal from '@/components/admin/AddProductModal';
 import EditProductModal from '@/components/admin/EditProductModal';
 import DeleteProductModal from '@/components/admin/DeleteProductModal';
-import Image from "next/image";
+import DeleteEventModal from '@/components/admin/DeleteEventModal';
+import EditEventModal from '@/components/admin/EditEventModal';
 
+// Types
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string;
+  image: string;
+  tag?: string;
+  tagColor?: string;
+  reviewsCount: number;
+  tags?: {icon?: string; label?: string; color?: string}[];
+  details?: {cookingTips?: string[]; nutritionalInfo?: string[]};
+  weightUnit?: string;
+  weightOptions?: any[];
+}
 
-import { useState } from 'react';
+interface Order {
+  id: string;
+  customer: string;
+  items: number;
+  total: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  date: string;
+}
 
-const products = [
-    {
-      id: 1,
-      name: 'Ribeye Wagyu Steak',
-      sku: 'MEA-001-BEEF',
-      category: 'Beef',
-      price: 25500,
-      stock: 85,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBNNHgBvtJtqRIIMeDkACNBIOd3L83OuJyFV5oJOC3jt1Xr82aOMUBuo2sevQtV7e_orP2H-c0WIwrC5wgRWkQzm4g_tH9FLOarlO2qYz709zK_9Gm613kDsKgPWgs892k-r03GUjhcCwKWTAex7Rwqku_PqRt7U-hOYefKfnZY0ph_XeahSN7ZwnzJggvjeMBRaS1v3cUvEzSVhMymE524RmGPG9aNWQH-xcqAFplpS05Di5-aefdpttp5gTbu3surNE7ikqCQAkU'
-    },
-    {
-      id: 2,
-      name: 'Organic Whole Chicken',
-      sku: 'MEA-042-POUL',
-      category: 'Poultry',
-      price: 8200,
-      stock: 12,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDdqFDiLNEace7qYoykp5FM5h8qhgTf0ASj5trfWUl55mvMxrw-3Htf0r98e712UvSa6w4T96XG8LJI5AnY5UPPeu1X8IJPXgMORtYpSYkZ4HGdgVX8qJonVK6Zbkkpe8XQk7Cka-YhGu_BYGpxiBOTDkhVgpSaCMguUyNP33wNsUvDypguIGPtTLQWpIos_bZ8y1vMRnmcjEH8CWhYk0QIjnU9XjUrb-UkgG84_hDw1FoqA2lG6eDa5gXRHgCxfYncUvGBsMdBEnw'
-    },
-    {
-      id: 3,
-      name: 'New Zealand Lamb Chops',
-      sku: 'MEA-108-LAMB',
-      category: 'Lamb',
-      price: 18900,
-      stock: 45,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-zzmi262WNLEM1NpghGHA16_RVW2vnGGv-zPnwvMayMXVQ-GV9UuRrC0BuM6R0BjtpoTGJlVoeMiyvQSnf5rHqMVZ21oBcUY0hTA3rGTVDy2np-uLKIw0TsMXWDaNULjHkwVC6ybbJ_JJPBUgEs9z8wzopi6fk8e_IwArV4rmcnfW4dwt3O8e5MdMr1plaugqb1GroZJRknuqhktjzgfrqU_9VCtDXAhUOphJp54peqbqHGx7FsmNMh7O-H6fxnc5d8rbN-12pXE'
-    },
-    {
-      id: 4,
-      name: 'Applewood Smoked Pork',
-      sku: 'MEA-221-PORK',
-      category: 'Pork',
-      price: 12400,
-      stock: 68,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCdfDW5CAEipfdfkugP2u7aeIr8ZFduRhM6FXzRuujI--zGuw0y7-v6K_a_ZOXtHF2lCtq2Q10cCbrnHEvpS8mgI-mcoREfJeCOQmUehjMZf4LdkrQaPP3aKvBGt_CXZdRV05FCUYkOSTAGiaDmf6WIXLyJFPUJFlS2wagn4rYoFhdcMZQH28HOL6-8UvfHbQ1Y5kM9HpdmfsY4U2yiHntWzZthNofTiBQYlu1SsFsggYL8H0k1uzzCFYVtOkmLFMyuzY1mNErqkeo'
-    }
-  ];
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  status: 'active' | 'upcoming' | 'ended';
+}
 
-export default function InventoryDashboard() {
+// Sample orders data (in a real app, this would come from an API)
+const sampleOrders: Order[] = [
+  {
+    id: 'ORD-001',
+    customer: 'John Doe',
+    items: 3,
+    total: 45600,
+    status: 'pending',
+    date: '2024-01-15',
+  },
+  {
+    id: 'ORD-002',
+    customer: 'Jane Smith',
+    items: 2,
+    total: 28900,
+    status: 'completed',
+    date: '2024-01-14',
+  },
+  {
+    id: 'ORD-003',
+    customer: 'Mike Johnson',
+    items: 5,
+    total: 72300,
+    status: 'pending',
+    date: '2024-01-14',
+  },
+  {
+    id: 'ORD-004',
+    customer: 'Sarah Williams',
+    items: 1,
+    total: 12500,
+    status: 'completed',
+    date: '2024-01-13',
+  },
+  {
+    id: 'ORD-005',
+    customer: 'David Brown',
+    items: 4,
+    total: 56700,
+    status: 'pending',
+    date: '2024-01-13',
+  },
+];
+
+// Sample events data
+const sampleEvents: Event[] = [
+  {
+    id: 'EVT-001',
+    title: 'Holiday Meat Bundle',
+    description: 'Get 20% off on premium holiday meat selection',
+    date: '2024-12-01',
+    status: 'active',
+  },
+  {
+    id: 'EVT-002',
+    title: 'Weekend BBQ Special',
+    description: 'Free delivery on all BBQ meat packs',
+    date: '2024-01-20',
+    status: 'upcoming',
+  },
+  {
+    id: 'EVT-003',
+    title: 'New Year Feast',
+    description: 'Exclusive discounts on party platters',
+    date: '2024-01-01',
+    status: 'ended',
+  },
+];
+
+export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [product, setProduct] = useState([...products]);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+  const [isDeleteProductModalOpen, setIsDeleteProductModalOpen] =
+    useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+  const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [productList, setProductList] = useState(products);
+  const [orderList] = useState(sampleOrders);
+  const [eventList, setEventList] = useState(sampleEvents);
 
+  const itemsPerPage = 5;
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const cats = ['All', ...new Set(productList.map(p => p.category))];
+    return cats;
+  }, [productList]);
+
+  // Filter products
+  const filteredProducts = useMemo(() => {
+    return productList.filter(product => {
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        selectedCategory === 'All' || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [productList, searchTerm, selectedCategory]);
+
+  // Paginate products
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredProducts.slice(start, end);
+  }, [filteredProducts, currentPage]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  // Stats
+  const stats = useMemo(
+    () => ({
+      totalProducts: productList.length,
+      pendingOrders: orderList.filter(o => o.status === 'pending').length,
+      completedOrders: orderList.filter(o => o.status === 'completed').length,
+      activeEvents: eventList.filter(e => e.status === 'active').length,
+    }),
+    [productList, orderList, eventList],
+  );
+
+  // Handlers
   const handleAddProduct = (newProduct: any) => {
-    // Add the new product to your products list
-    setProduct(prev => [newProduct, ...prev]);
-    
-    // In a real app, you would send this to your backend API
-    
-    // Show success message
-    alert('Product added successfully!');
+    setProductList(prev => [newProduct, ...prev]);
+    setIsAddProductModalOpen(false);
   };
 
-   const handleEditClick = (product: any) => {
-    setSelectedProduct(product);
-    setIsEditModalOpen(true);
+  const handleEditProduct = (updatedProduct: any) => {
+    setProductList(prev =>
+      prev.map(p => (p.id === updatedProduct.id ? updatedProduct : p)),
+    );
+    setIsEditProductModalOpen(false);
+    setSelectedProduct(null);
   };
 
-  const handleSaveEdit = (updatedProduct: any) => {
-    setProduct(prev => prev.map(p => 
-      p.id === updatedProduct.id ? updatedProduct : p
-    ));
-    alert('Product updated successfully!');
+  const handleDeleteProduct = () => {
+    if (selectedProduct) {
+      setProductList(prev => prev.filter(p => p.id !== selectedProduct.id));
+      setIsDeleteProductModalOpen(false);
+      setSelectedProduct(null);
+    }
   };
 
-  const handleDeleteClick = (product: any) => {
-    setSelectedProduct(product);
-    setIsDeleteModalOpen(true);
+  const handleAddEvent = (newEvent: any) => {
+    setEventList(prev => [newEvent, ...prev]);
+    setIsAddEventModalOpen(false);
   };
 
-  const handleConfirmDelete = () => {
-    setProduct(prev => prev.filter(p => p.id !== selectedProduct.id));
-    alert('Product deleted successfully!');
+  const handleEditEvent = (updatedEvent: any) => {
+    setEventList(prev =>
+      prev.map(e => (e.id === updatedEvent.id ? updatedEvent : e)),
+    );
+    setIsEditEventModalOpen(false);
+    setSelectedEvent(null);
   };
 
-
-  const categories = ['All', 'Beef', 'Poultry', 'Lamb', 'Pork', 'More'];
-
-  
-
-  const stats = {
-    totalProducts: 1240,
-    ordersPending: 48,
-    ordersCompleted: 856,
-    lowStock: 12
+  const handleDeleteEvent = () => {
+    if (selectedEvent) {
+      setEventList(prev => prev.filter(e => e.id !== selectedEvent.id));
+      setIsDeleteEventModalOpen(false);
+      setSelectedEvent(null);
+    }
   };
 
-  const getStockColor = (stock: number) => {
-    if (stock < 20) return 'bg-amber-400';
-    if (stock < 50) return 'bg-yellow-400';
-    return 'bg-primary';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const getStockTextColor = (stock: number) => {
-    if (stock < 20) return 'text-amber-600';
-    if (stock < 50) return 'text-yellow-600';
-    return 'text-gray-700';
+  const getEventStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'upcoming':
+        return 'bg-blue-100 text-blue-800';
+      case 'ended':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f8f6]">
-         <AddProductModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddProduct={handleAddProduct}
-      />
-      <EditProductModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSave={handleSaveEdit}
-        product={selectedProduct}
-      />
-      
-      <DeleteProductModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        product={product}
-      />
-        <header className="flex items-center justify-between border-b border-[#dfe6db] px-6 py-4 bg-white">
-        <div className="flex items-center gap-3">
-          <div className="size-6 bg-primary/70 rounded-lg flex items-center justify-center">
-                        <Image 
-                        src="https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg"
-                        alt="logo"
-                        width={100}
-                        height={100}
-                        className="rounded-lg"
-                        />
-                      </div>
-          <h2 className="text-lg font-bold text-gray-800">Meatopia Admin</h2>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+              <Image
+                src="https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg"
+                alt="Meatopia"
+                width={40}
+                height={40}
+                className="rounded-lg object-cover"
+              />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">
+                Meatopia Admin
+              </h1>
+              <p className="text-xs text-gray-500">Dashboard v2.0</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="text-sm text-gray-600 hover:text-primary transition-colors"
+            >
+              View Store
+            </Link>
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+              A
+            </div>
+          </div>
         </div>
-        <button className="px-4 py-2 bg-primary text-[#162210] text-sm font-bold rounded-lg hover:opacity-90 transition-opacity">
-          Support
-        </button>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-8">
-        {/* Stats Header */}
-        <div className="flex flex-wrap gap-6 mb-8">
-          <div className="flex-1 min-w-60 bg-white rounded-xl p-6 border border-[#dfe6db] flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-[#6f8961] text-sm font-medium mb-1">Total Products</p>
-              <p className="text-[#131811] text-3xl font-bold">{stats.totalProducts.toLocaleString()}</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">Products</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {stats.totalProducts}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <Package className="w-6 h-6 text-primary" />
+              </div>
             </div>
-            <div className="bg-primary/20 p-3 rounded-xl text-primary">
-              <span className="material-symbols-outlined text-3xl">inventory_2</span>
-            </div>
-          </div>
-          
-          <div className="flex-1 min-w-60 bg-white rounded-xl p-6 border border-[#dfe6db] flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-[#6f8961] text-sm font-medium mb-1">Orders Pending</p>
-              <p className="text-[#131811] text-3xl font-bold">{stats.ordersPending}</p>
-            </div>
-            <div className="bg-amber-100 p-3 rounded-xl text-amber-600">
-              <span className="material-symbols-outlined text-3xl">pending_actions</span>
+            <div className="mt-4 flex items-center gap-2 text-xs text-green-600">
+              <TrendingUp className="w-4 h-4" />
+              <span>+12% this month</span>
             </div>
           </div>
-          
-          <div className="flex-1 min-w-60 bg-white rounded-xl p-6 border border-[#dfe6db] flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-[#6f8961] text-sm font-medium mb-1">Orders Completed</p>
-              <p className="text-[#131811] text-3xl font-bold">{stats.ordersCompleted}</p>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">
+                  Pending Orders
+                </p>
+                <p className="text-3xl font-bold text-yellow-600 mt-1">
+                  {stats.pendingOrders}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-yellow-600" />
+              </div>
             </div>
-            <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600">
-              <span className="material-symbols-outlined text-3xl">task_alt</span>
+            <div className="mt-4 flex items-center gap-2 text-xs text-yellow-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>Needs attention</span>
             </div>
           </div>
-          
-          <div className="flex-1 min-w-60 bg-white rounded-xl p-6 border border-[#dfe6db] flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-[#6f8961] text-sm font-medium mb-1">Low Stock Items</p>
-              <p className="text-[#131811] text-3xl font-bold">{stats.lowStock}</p>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">
+                  Completed Orders
+                </p>
+                <p className="text-3xl font-bold text-green-600 mt-1">
+                  {stats.completedOrders}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
             </div>
-            <div className="bg-red-100 p-3 rounded-xl text-red-600">
-              <span className="material-symbols-outlined text-3xl">warning</span>
+            <div className="mt-4 flex items-center gap-2 text-xs text-green-600">
+              <TrendingUp className="w-4 h-4" />
+              <span>+8% this week</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 font-medium">
+                  Active Events
+                </p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">
+                  {stats.activeEvents}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-2 text-xs text-blue-600">
+              <span>Promotions running</span>
             </div>
           </div>
         </div>
 
-        {/* Product Management Section */}
-        <div className="bg-white rounded-xl border border-[#dfe6db] shadow-sm overflow-hidden">
-          {/* Toolbar */}
-          <div className="px-6 py-6 border-b border-[#dfe6db]">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-[#131811]">Product Inventory</h2>
+        {/* Products Table - Full Width */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Products</h2>
+                <p className="text-sm text-gray-500">
+                  Manage your product inventory
+                </p>
+              </div>
               <button
-              onClick={() => setIsModalOpen(true)}
-               className="flex items-center justify-center gap-2 bg-primary hover:opacity-90 text-[#162210] px-6 py-3 rounded-lg font-bold transition-all shadow-md active:scale-95">
-                <span className="material-symbols-outlined font-bold">add</span>
-                Add New Product
+                onClick={() => setIsAddProductModalOpen(true)}
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-[#162210] px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md active:scale-95"
+              >
+                <Plus className="w-5 h-5" />
+                Add Product
               </button>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative flex-1 min-w-75">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6f8961]">search</span>
-                <input 
-                  className="w-full pl-10 pr-4 py-3 bg-[#f2f4f0] border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/50 text-[#131811]"
-                  placeholder="Search product name, SKU..."
+          </div>
+
+          {/* Filters */}
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
                   type="text"
+                  placeholder="Search products..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                 />
               </div>
-              
-              {/* Categories Chips/Filters */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-                {categories.map((category) => (
+              <div className="flex flex-wrap gap-2">
+                {categories.map(category => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 text-xs font-bold rounded-full uppercase tracking-wider transition-colors ${
+                    className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${
                       selectedCategory === category
                         ? 'bg-primary text-[#162210]'
-                        : 'bg-[#f2f4f0] text-[#6f8961] hover:bg-[#e2e8e2]'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     {category}
@@ -245,70 +429,86 @@ export default function InventoryDashboard() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-[#f2f4f0] border-b border-[#dfe6db]">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-bold text-[#6f8961] uppercase tracking-wider">Product</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[#6f8961] uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[#6f8961] uppercase tracking-wider text-right">Price</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[#6f8961] uppercase tracking-wider">Stock Level</th>
-                  <th className="px-6 py-4 text-xs font-bold text-[#6f8961] uppercase tracking-wider text-center">Actions</th>
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Price
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Weight Options
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              
-              <tbody className="divide-y divide-[#f2f4f0]">
-                {product.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-[#fafbfa] transition-colors">
+              <tbody className="divide-y divide-gray-50">
+                {paginatedProducts.map(product => (
+                  <tr
+                    key={product.id}
+                    className="hover:bg-gray-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div 
-                          className="h-14 w-14 rounded-lg bg-[#f2f4f0] bg-cover bg-center"
-                          style={{ backgroundImage: `url('${prod.image}')` }}
-                        ></div>
+                        <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden">
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                         <div>
-                          <p className="font-semibold text-[#131811]">{prod.name}</p>
-                          <p className="text-xs text-[#6f8961] uppercase">SKU: {prod.sku}</p>
+                          <p className="font-medium text-gray-900">
+                            {product.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ID: {product.id}
+                          </p>
                         </div>
                       </div>
                     </td>
-                    
                     <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-[#f2f4f0] text-[#6f8961] text-xs font-semibold rounded-md">
-                        {prod.category}
+                      <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+                        {product.category}
                       </span>
                     </td>
-                    
-                    <td className="px-6 py-4 text-right font-bold text-[#131811]">
-                      ₦{prod.price.toLocaleString()}
+                    <td className="px-6 py-4 text-right font-semibold text-gray-900">
+                      ₦{product.price.toLocaleString()}
                     </td>
-                    
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-[#f2f4f0] rounded-full overflow-hidden max-w-25">
-                          <div 
-                            className={`h-full ${getStockColor(prod.stock)}`}
-                            style={{ width: `${Math.min(prod.stock, 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className={`text-sm font-medium ${getStockTextColor(prod.stock)}`}>
-                          {prod.stock} units
-                        </span>
-                      </div>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-sm text-gray-600">
+                        {product.weightOptions?.length || 0} variants
+                      </span>
                     </td>
-                    
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                        onClick={() => handleEditClick(product)}
-                        className="p-2 text-[#6f8961] hover:text-primary transition-colors">
-                          <span className="material-symbols-outlined text-xl">edit</span>
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setIsEditProductModalOpen(true);
+                          }}
+                          className="p-2 text-gray-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
+                        >
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button
-                        onClick={() => handleDeleteClick(product)}
-                        className="p-2 text-[#6f8961] hover:text-red-500 transition-colors">
-                          <span className="material-symbols-outlined text-xl">delete</span>
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setIsDeleteProductModalOpen(true);
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                        
                       </div>
                     </td>
                   </tr>
@@ -318,149 +518,258 @@ export default function InventoryDashboard() {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 flex items-center justify-between border-t border-[#dfe6db]">
-            <p className="text-sm text-[#6f8961]">Showing 1 to 10 of {stats.totalProducts.toLocaleString()} results</p>
+          <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+              {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of{' '}
+              {filteredProducts.length} products
+            </p>
             <div className="flex items-center gap-2">
-              <button 
-                className="p-2 bg-[#f2f4f0] text-[#6f8961] rounded-lg hover:text-[#131811] disabled:opacity-50"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              >
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-              
-              {[1, 2, 3].map(page => (
-                <button
-                  key={page}
-                  className={`px-4 py-2 text-sm font-bold rounded-lg ${
-                    currentPage === page
-                      ? 'bg-primary text-[#162210]'
-                      : 'text-[#6f8961] hover:bg-[#f2f4f0]'
-                  }`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </button>
-              ))}
-              
-              <span className="text-[#6f8961] px-2">...</span>
-              
               <button
-                className="px-4 py-2 text-sm text-[#6f8961] hover:bg-[#f2f4f0] rounded-lg"
-                onClick={() => setCurrentPage(124)}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                124
+                <ChevronLeft className="w-5 h-5" />
               </button>
-              
-              <button 
-                className="p-2 bg-[#f2f4f0] text-[#6f8961] rounded-lg hover:text-[#131811]"
-                onClick={() => setCurrentPage(prev => prev + 1)}
+              {Array.from({length: Math.min(3, totalPages)}, (_, i) => {
+                const page = currentPage + i - 1;
+                if (page < 1 || page > totalPages) return null;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                      currentPage === page
+                        ? 'bg-primary text-[#162210]'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() =>
+                  setCurrentPage(prev => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <span className="material-symbols-outlined">chevron_right</span>
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats Footer */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl border border-[#dfe6db] p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#131811]">Stock Status</h3>
-              <span className="material-symbols-outlined text-primary">trending_up</span>
+        {/* Orders and Events - 2 Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Orders Table - 50% */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Orders</h2>
+                  <p className="text-sm text-gray-500">Recent order status</p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#6f8961]">In Stock</span>
-                <span className="font-bold text-[#131811]">1,128 items</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#6f8961]">Low Stock</span>
-                <span className="font-bold text-amber-600">12 items</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#6f8961]">Out of Stock</span>
-                <span className="font-bold text-red-600">0 items</span>
-              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Order
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {orderList.slice(0, 4).map(order => (
+                    <tr
+                      key={order.id}
+                      className="hover:bg-gray-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-medium text-gray-900">
+                          {order.id}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-600">
+                          {order.customer}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold text-gray-900">
+                        ₦{order.total.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <span
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}
+                          >
+                            {order.status.charAt(0).toUpperCase() +
+                              order.status.slice(1)}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          
-          <div className="bg-white rounded-xl border border-[#dfe6db] p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#131811]">Recent Activity</h3>
-              <span className="material-symbols-outlined text-primary">history</span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="size-8 bg-primary/20 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary text-sm">add</span>
+
+          {/* Events Table - 50% */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Events</h2>
+                  <p className="text-sm text-gray-500">Manage special events</p>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[#131811]">New product added</p>
-                  <p className="text-xs text-[#6f8961]">5 minutes ago</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="size-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-emerald-600 text-sm">inventory</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[#131811]">Stock updated</p>
-                  <p className="text-xs text-[#6f8961]">2 hours ago</p>
-                </div>
+                <button
+                  onClick={() => setIsAddEventModalOpen(true)}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-[#162210] px-4 py-2 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-md active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Event
+                </button>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-xl border border-[#dfe6db] p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#131811]">Quick Actions</h3>
-              <span className="material-symbols-outlined text-primary">bolt</span>
-            </div>
-            <div className="space-y-2">
-              <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#6f8961] hover:bg-[#f2f4f0] rounded-lg transition-colors">
-                <span className="material-symbols-outlined">download</span>
-                Export Inventory
-              </button>
-              <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#6f8961] hover:bg-[#f2f4f0] rounded-lg transition-colors">
-                <span className="material-symbols-outlined">print</span>
-                Print Report
-              </button>
-              <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#6f8961] hover:bg-[#f2f4f0] rounded-lg transition-colors">
-                <span className="material-symbols-outlined">notifications</span>
-                Set Stock Alerts
-              </button>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Event
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {eventList.slice(0, 4).map(event => (
+                    <tr
+                      key={event.id}
+                      className="hover:bg-gray-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {event.title}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate max-w-[120px]">
+                            {event.description}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-600">
+                          {new Date(event.date).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <span
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${getEventStatusColor(event.status)}`}
+                          >
+                            {event.status.charAt(0).toUpperCase() +
+                              event.status.slice(1)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setIsEditEventModalOpen(true);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setIsDeleteEventModalOpen(true);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
-      <footer className="py-6 px-10 border-t border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-gray-600 text-sm">
-            <span className="material-symbols-outlined text-base">
-              verified_user
-            </span>
-            Secure Enterprise Environment
-          </div>
-          <div className="text-gray-500 text-sm">
-            © 2024 Meatopia Admin. Version 2.4.0-stable
-          </div>
-          <div className="flex gap-6 text-sm">
-            <a
-              href="#"
-              className="text-gray-600 hover:text-primary transition-colors"
-            >
-              Help Center
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-primary transition-colors"
-            >
-              System Status
-            </a>
-          </div>
-        </div>
-      </footer>
+      </main>
+      <AddProductModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => setIsAddProductModalOpen(false)}
+        onAddProduct={handleAddProduct}
+      />
+      <EditProductModal
+        isOpen={isEditProductModalOpen}
+        onClose={() => {
+          setIsEditProductModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSave={handleEditProduct}
+        product={selectedProduct}
+      />
+      <DeleteProductModal
+        isOpen={isDeleteProductModalOpen}
+        onClose={() => {
+          setIsDeleteProductModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onConfirm={handleDeleteProduct}
+        product={selectedProduct}
+      />
+      <AddEventModal
+        isOpen={isAddEventModalOpen}
+        onClose={() => setIsAddEventModalOpen(false)}
+        onAddEvent={handleAddEvent}
+      />
+      <EditEventModal
+        isOpen={isEditEventModalOpen}
+        onClose={() => {
+          setIsEditEventModalOpen(false);
+          setSelectedEvent(null);
+        }}
+        onSave={handleEditEvent}
+        event={selectedEvent}
+      />
+      <DeleteEventModal
+        isOpen={isDeleteEventModalOpen}
+        onClose={() => {
+          setIsDeleteEventModalOpen(false);
+          setSelectedEvent(null);
+        }}
+        onConfirm={handleDeleteEvent}
+        event={selectedEvent}
+      />
     </div>
   );
 }
