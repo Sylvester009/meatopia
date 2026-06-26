@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import {useState, useEffect} from 'react';
+import {X, Plus, Trash2} from 'lucide-react';
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -10,7 +10,12 @@ interface EditProductModalProps {
   product: any;
 }
 
-export default function EditProductModal({ isOpen, onClose, onSave, product }: EditProductModalProps) {
+export default function EditProductModal({
+  isOpen,
+  onClose,
+  onSave,
+  product,
+}: EditProductModalProps) {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -20,9 +25,9 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
     image: '',
     tag: '',
     reviewsCount: 0,
-    weightOptions: [{ label: '1kg', multiplier: 1, image: '' }],
-    tags: [{ label: '', icon: '', color: 'primary' }],
-    details: { cookingTips: [''], nutritionalInfo: [''] },
+    weightOptions: [{label: '1kg', multiplier: 1, image: ''}],
+    tags: [{label: '', icon: '', color: 'primary'}],
+    details: {cookingTips: [''], nutritionalInfo: ['']},
   });
 
   useEffect(() => {
@@ -31,8 +36,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
       const weightOptions = product.weightOptions?.map((opt: any) => ({
         label: opt.label || '',
         multiplier: opt.multiplier || 1,
-        image: opt.image || ''  // ← Ensure image is always a string
-      })) || [{ label: '1kg', multiplier: 1, image: '' }];
+        image: opt.image || '', // ← Ensure image is always a string
+      })) || [{label: '1kg', multiplier: 1, image: ''}];
 
       setFormData({
         id: product.id || '',
@@ -44,8 +49,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
         tag: product.tag || '',
         reviewsCount: product.reviewsCount || 0,
         weightOptions: weightOptions,
-        tags: product.tags || [{ label: '', icon: '', color: 'primary' }],
-        details: product.details || { cookingTips: [''], nutritionalInfo: [''] },
+        tags: product.tags || [{label: '', icon: '', color: 'primary'}],
+        details: product.details || {cookingTips: [''], nutritionalInfo: ['']},
       });
     }
   }, [product]);
@@ -66,23 +71,30 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
   const addWeightOption = () => {
     setFormData(prev => ({
       ...prev,
-      weightOptions: [...prev.weightOptions, { label: '', multiplier: 1, image: '' }]
+      weightOptions: [
+        ...prev.weightOptions,
+        {label: '', multiplier: 1, image: ''},
+      ],
     }));
   };
 
   const removeWeightOption = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      weightOptions: prev.weightOptions.filter((_, i) => i !== index)
+      weightOptions: prev.weightOptions.filter((_, i) => i !== index),
     }));
   };
 
-  const updateWeightOption = (index: number, field: string, value: string | number) => {
+  const updateWeightOption = (
+    index: number,
+    field: string,
+    value: string | number,
+  ) => {
     setFormData(prev => ({
       ...prev,
-      weightOptions: prev.weightOptions.map((opt, i) => 
-        i === index ? { ...opt, [field]: value } : opt
-      )
+      weightOptions: prev.weightOptions.map((opt, i) =>
+        i === index ? {...opt, [field]: value} : opt,
+      ),
     }));
   };
 
@@ -94,7 +106,10 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
             <h2 className="text-xl font-bold text-gray-900">Edit Product</h2>
             <p className="text-sm text-gray-500">Update product details</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -103,21 +118,29 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Name *
+              </label>
               <input
                 type="text"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={e =>
+                  setFormData(prev => ({...prev, name: e.target.value}))
+                }
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category *
+              </label>
               <select
                 required
                 value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                onChange={e =>
+                  setFormData(prev => ({...prev, category: e.target.value}))
+                }
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               >
                 <option value="">Select Category</option>
@@ -133,21 +156,29 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price (₦) *
+              </label>
               <input
                 type="number"
                 required
                 value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                onChange={e =>
+                  setFormData(prev => ({...prev, price: e.target.value}))
+                }
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tag</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tag
+              </label>
               <input
                 type="text"
                 value={formData.tag}
-                onChange={(e) => setFormData(prev => ({ ...prev, tag: e.target.value }))}
+                onChange={e =>
+                  setFormData(prev => ({...prev, tag: e.target.value}))
+                }
                 placeholder="e.g. Popular, Premium"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
@@ -155,22 +186,30 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description *
+            </label>
             <textarea
               required
               rows={3}
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={e =>
+                setFormData(prev => ({...prev, description: e.target.value}))
+              }
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Image URL
+            </label>
             <input
               type="url"
               value={formData.image}
-              onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+              onChange={e =>
+                setFormData(prev => ({...prev, image: e.target.value}))
+              }
               placeholder="https://example.com/image.jpg"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
             />
@@ -179,7 +218,9 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
           {/* Weight Options */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">Weight Options</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Weight Options
+              </label>
               <button
                 type="button"
                 onClick={addWeightOption}
@@ -195,7 +236,9 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
                     type="text"
                     placeholder="Label (e.g. 1kg)"
                     value={option.label || ''}
-                    onChange={(e) => updateWeightOption(index, 'label', e.target.value)}
+                    onChange={e =>
+                      updateWeightOption(index, 'label', e.target.value)
+                    }
                     className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
                   />
                   <input
@@ -203,14 +246,22 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
                     placeholder="Multiplier"
                     step="0.1"
                     value={option.multiplier || 1}
-                    onChange={(e) => updateWeightOption(index, 'multiplier', parseFloat(e.target.value) || 1)}
+                    onChange={e =>
+                      updateWeightOption(
+                        index,
+                        'multiplier',
+                        parseFloat(e.target.value) || 1,
+                      )
+                    }
                     className="w-24 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
                   />
                   <input
                     type="url"
                     placeholder="Image URL"
-                    value={option.image || ''}  // ← Always provide a string
-                    onChange={(e) => updateWeightOption(index, 'image', e.target.value)}
+                    value={option.image || ''} // ← Always provide a string
+                    onChange={e =>
+                      updateWeightOption(index, 'image', e.target.value)
+                    }
                     className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
                   />
                   <button
