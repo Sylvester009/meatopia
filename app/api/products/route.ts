@@ -1,7 +1,7 @@
 // app/api/products/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductImageUrl } from '@/lib/imageUtils';
-import { prisma } from '@/prisma/seed';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,76 +13,63 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'name';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-    const skip = (page - 1) * limit;
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
 
-    // Build where clause
-    const where: any = {};
-    
+    // Build query
+    let query = supabase
+      .from('products')
+      .select(`
+        *,
+        tags (*),
+        cooking_tips (*),
+        nutritional_info (*),
+        weight_options (*),
+        product_images (*)
+      `, { count: 'exact' })
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(start, end);
+
+    // Apply filters
     if (category && category !== 'All Meats') {
-      where.category = category;
+      query = query.eq('category', category);
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { category: { contains: search, mode: 'insensitive' } },
-      ];
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`);
     }
 
-    // Build orderBy
-    let orderBy: any = {};
-    if (sortBy === 'price') {
-      orderBy.price = sortOrder;
-    } else if (sortBy === 'name') {
-      orderBy.name = sortOrder;
-    } else if (sortBy === 'rating') {
-      orderBy.rating = sortOrder;
-    } else if (sortBy === 'reviewsCount') {
-      orderBy.reviewsCount = sortOrder;
-    } else {
-      orderBy.name = 'asc';
-    }
+    const { data, error, count } = await query;
 
-    // Get products
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        tags: true,
-        cookingTips: true,
-        nutritionalInfo: true,
-        weightOptions: true,
-        images: true,
-      },
-      skip,
-      take: limit,
-      orderBy,
-    });
+    if (error) {
+      console.error('Error fetching products:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch products' },
+        { status: 500 }
+      );
+    }
 
     // Transform image URLs
-    const transformedProducts = products.map(product => ({
+    const transformedProducts = (data || []).map((product: any) => ({
       ...product,
       image: getProductImageUrl(product.image),
-      images: product.images.map(img => ({
+      product_images: (product.product_images || []).map((img: any) => ({
         ...img,
         url: getProductImageUrl(img.url),
       })),
-      weightOptions: product.weightOptions.map(option => ({
+      weight_options: (product.weight_options || []).map((option: any) => ({
         ...option,
         image: option.image ? getProductImageUrl(option.image) : null,
       })),
     }));
 
-    // Get total count
-    const total = await prisma.product.count({ where });
-
     return NextResponse.json({
       products: transformedProducts,
       pagination: {
-        total,
+        total: count || 0,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
