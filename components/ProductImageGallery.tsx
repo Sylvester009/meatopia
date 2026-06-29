@@ -1,7 +1,7 @@
 'use client';
 
-import {useState} from 'react';
-import {ChevronLeft, ChevronRight} from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProductImageGalleryProps {
@@ -18,20 +18,51 @@ export default function ProductImageGallery({
 }: ProductImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+
+  // Helper to get the correct image URL
+  const getImageUrl = (url: string) => {
+    if (!url) return '/images/placeholder.png';
+    
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    if (url.startsWith('data:image')) {
+      return url;
+    }
+    
+    if (url.startsWith('/images/') || url.startsWith('images/')) {
+      return url;
+    }
+    
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl && !url.includes('http')) {
+      return `${supabaseUrl}/storage/v1/object/public/products/${url}`;
+    }
+    
+    return url;
+  };
+
+  // Filter out empty images and handle errors
+  const displayImages = images
+    .filter(img => img && img.trim() !== '')
+    .map(img => getImageUrl(img));
 
   // If no images, use placeholder
-  const displayImages =
-    images.filter(img => img && img.trim() !== '').length > 0
-      ? images.filter(img => img && img.trim() !== '')
-      : ['/placeholder-product.jpg'];
+  const finalImages = displayImages.length > 0 ? displayImages : ['/images/placeholder.png'];
+
+  const handleImageError = (index: number) => {
+    setImageErrors(prev => ({ ...prev, [index]: true }));
+  };
 
   const nextImage = () => {
-    setSelectedImage(prev => (prev + 1) % displayImages.length);
+    setSelectedImage(prev => (prev + 1) % finalImages.length);
   };
 
   const prevImage = () => {
     setSelectedImage(
-      prev => (prev - 1 + displayImages.length) % displayImages.length,
+      prev => (prev - 1 + finalImages.length) % finalImages.length
     );
   };
 
@@ -51,18 +82,19 @@ export default function ProductImageGallery({
 
         <div className="relative w-full h-full">
           <Image
-            src={displayImages[selectedImage]}
+            src={imageErrors[selectedImage] ? '/images/placeholder.png' : finalImages[selectedImage]}
             alt={`${productName} - Image ${selectedImage + 1}`}
             fill
             className={`object-cover transition-transform duration-300 ${
               isZoomed ? 'scale-110' : 'scale-100'
             }`}
             priority
+            onError={() => handleImageError(selectedImage)}
           />
         </div>
 
         {/* Navigation Arrows - Only show if multiple images */}
-        {displayImages.length > 1 && (
+        {finalImages.length > 1 && (
           <>
             <button
               onClick={prevImage}
@@ -82,17 +114,17 @@ export default function ProductImageGallery({
         )}
 
         {/* Image Counter */}
-        {displayImages.length > 1 && (
+        {finalImages.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
-            {selectedImage + 1} / {displayImages.length}
+            {selectedImage + 1} / {finalImages.length}
           </div>
         )}
       </div>
 
       {/* Thumbnails */}
-      {displayImages.length > 1 && (
+      {finalImages.length > 1 && (
         <div className="grid grid-cols-4 gap-3">
-          {displayImages.map((image, index) => (
+          {finalImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedImage(index)}
@@ -103,10 +135,11 @@ export default function ProductImageGallery({
               }`}
             >
               <Image
-                src={image}
+                src={imageErrors[index] ? '/images/placeholder.png' : image}
                 alt={`${productName} thumbnail ${index + 1}`}
                 fill
                 className="object-cover"
+                onError={() => handleImageError(index)}
               />
             </button>
           ))}

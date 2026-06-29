@@ -1,0 +1,80 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  name            String
+  category        String
+  price           Int
+  description     String
+  image           String
+  tag             String?
+  tagColor        String?
+  rating          Float?
+  reviewsCount    Int             @default(0)
+  weightUnit      String?
+  
+  // Related models
+  tags            Tag[]
+  cookingTips     CookingTip[]
+  nutritionalInfo NutritionalInfo[]
+  weightOptions   WeightOption[]
+  images          ProductImage[]
+
+  @@map("products")
+}
+
+model Tag {
+  id        Int     @id @default(autoincrement())
+  icon      String?
+  label     String
+  color     String?
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("tags")
+}
+
+model CookingTip {
+  id        Int     @id @default(autoincrement())
+  tip       String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("cooking_tips")
+}
+
+model NutritionalInfo {
+  id        Int     @id @default(autoincrement())
+  info      String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("nutritional_info")
+}
+
+model WeightOption {
+  id         Int     @id @default(autoincrement())
+  label      String
+  multiplier Float
+  image      String?
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("weight_options")
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  url       String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}

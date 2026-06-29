@@ -1,6 +1,6 @@
 'use client';
 
-import {X, AlertTriangle} from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 
 interface DeleteProductModalProps {

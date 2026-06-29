@@ -1,40 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import { Product } from '@/data/product';
-import { useCart } from '@/context/CartContext';
-import { 
-  Star, 
-  Minus, 
-  Plus, 
-  ShoppingBag, 
-  Truck, 
+import {useState} from 'react';
+import {Product} from '@/services/productService';
+import {useCart} from '@/context/CartContext';
+import {
+  Star,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Truck,
   Snowflake,
   Heart,
   Share2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 
 interface ProductDetailsProps {
   product: Product;
 }
 
-export default function ProductDetails({ product }: ProductDetailsProps) {
+export default function ProductDetails({product}: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedWeight, setSelectedWeight] = useState(
-    product.weightOptions?.[0] || null
+    product.weightOptions?.[0] || null,
   );
   const [expandedSections, setExpandedSections] = useState({
     description: true,
     details: false,
   });
-  
-  const { addToCart } = useCart();
+
+  const {addToCart} = useCart();
 
   // Calculate prices
   const basePrice = product.price;
-  const unitPrice = selectedWeight ? basePrice * selectedWeight.multiplier : basePrice;
+  const unitPrice = selectedWeight
+    ? basePrice * selectedWeight.multiplier
+    : basePrice;
   const totalPrice = unitPrice * quantity;
 
   const formatPrice = (price: number) => {
@@ -47,7 +49,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
     addToCart({
       id: `${product.id}-${selectedWeight.label}`,
       name: product.name,
-      image: selectedWeight.image || product.image,
+      image: product.image,
       basePrice: product.price,
       unitPrice: unitPrice,
       quantity: quantity,
@@ -58,9 +60,14 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
+
+  const hasCookingTips = product.cookingTips && product.cookingTips.length > 0;
+  const hasNutritionalInfo =
+    product.nutritionalInfo && product.nutritionalInfo.length > 0;
+  const hasDetails = hasCookingTips || hasNutritionalInfo;
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,10 +83,16 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             </h1>
           </div>
           <div className="flex gap-2">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Save to favorites">
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Save to favorites"
+            >
               <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
             </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Share">
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Share"
+            >
               <Share2 className="w-5 h-5 text-gray-400 hover:text-primary transition-colors" />
             </button>
           </div>
@@ -89,7 +102,14 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         <div className="flex items-center gap-3 mt-2">
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+              <Star
+                key={i}
+                className={`w-4 h-4 ${
+                  i < Math.floor(product.rating || 0)
+                    ? 'fill-primary text-primary'
+                    : 'fill-gray-200 text-gray-200'
+                }`}
+              />
             ))}
           </div>
           <span className="text-sm text-gray-500">
@@ -120,9 +140,9 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             Select Weight
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {product.weightOptions.map((weight) => (
+            {product.weightOptions.map(weight => (
               <button
-                key={weight.label}
+                key={weight.id || weight.label}
                 onClick={() => setSelectedWeight(weight)}
                 className={`px-4 py-3 rounded-lg border-2 text-center transition-all ${
                   selectedWeight?.label === weight.label
@@ -140,15 +160,16 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       {/* Tags/Badges */}
       {product.tags && product.tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {product.tags.map((tag, index) => (
+          {product.tags.map(tag => (
             <span
-              key={index}
+              key={tag.id}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
                 tag.color === 'primary'
                   ? 'bg-primary/10 text-primary border border-primary/20'
                   : 'bg-gray-100 text-gray-600'
               }`}
             >
+              {tag.icon && <span>{tag.icon}</span>}
               {tag.label}
             </span>
           ))}
@@ -176,7 +197,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       </div>
 
       {/* Additional Details - Collapsible */}
-      {product.details && (
+      {hasDetails && (
         <div className="border-t border-gray-100 pt-4">
           <button
             onClick={() => toggleSection('details')}
@@ -191,27 +212,37 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
           </button>
           {expandedSections.details && (
             <div className="mt-3 space-y-3">
-              {product.details.cookingTips && (
+              {hasCookingTips && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Cooking Tips</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                    Cooking Tips
+                  </h4>
                   <ul className="space-y-1.5">
-                    {product.details.cookingTips.map((tip, index) => (
-                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                    {product.cookingTips!.map(tip => (
+                      <li
+                        key={tip.id}
+                        className="text-sm text-gray-600 flex items-start gap-2"
+                      >
                         <span className="text-primary mt-0.5">•</span>
-                        {tip}
+                        {tip.tip}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
-              {product.details.nutritionalInfo && (
+              {hasNutritionalInfo && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Nutritional Information</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                    Nutritional Information
+                  </h4>
                   <ul className="space-y-1.5">
-                    {product.details.nutritionalInfo.map((info, index) => (
-                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                    {product.nutritionalInfo!.map(info => (
+                      <li
+                        key={info.id}
+                        className="text-sm text-gray-600 flex items-start gap-2"
+                      >
                         <span className="text-primary mt-0.5">•</span>
-                        {info}
+                        {info.info}
                       </li>
                     ))}
                   </ul>
@@ -263,11 +294,15 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         <div className="grid grid-cols-2 gap-3 mt-4">
           <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
             <Truck className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-gray-600">Next Day Delivery</span>
+            <span className="text-xs font-medium text-gray-600">
+              Next Day Delivery
+            </span>
           </div>
           <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-4 py-3">
             <Snowflake className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-gray-600">Chilled Shipping</span>
+            <span className="text-xs font-medium text-gray-600">
+              Chilled Shipping
+            </span>
           </div>
         </div>
       </div>

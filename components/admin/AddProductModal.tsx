@@ -1,7 +1,9 @@
 'use client';
 
-import {useState} from 'react';
-import {X, Plus, Trash2} from 'lucide-react';
+import {useState, useRef} from 'react';
+import {X, Plus, Trash2, Upload, Image as ImageIcon} from 'lucide-react';
+import {supabase} from '@/lib/supabase';
+import Image from 'next/image';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -27,8 +29,93 @@ export default function AddProductModal({
     tags: [{label: '', icon: '', color: 'primary'}],
     details: {cookingTips: [''], nutritionalInfo: ['']},
   });
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const weightFileInputRefs = useRef<{[key: number]: HTMLInputElement | null}>(
+    {},
+  );
 
   if (!isOpen) return null;
+
+  const handleImageUpload = async (
+    file: File,
+    type: 'main' | 'weight',
+    index?: number,
+  ) => {
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      // Upload to Supabase Storage
+      const {data, error} = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload image. Please try again.');
+        setUploading(false);
+        return;
+      }
+
+      // Get public URL
+      const {
+        data: {publicUrl},
+      } = supabase.storage.from('product-images').getPublicUrl(filePath);
+
+      setUploadProgress(100);
+
+      // Update form data based on type
+      if (type === 'main') {
+        setFormData(prev => ({...prev, image: publicUrl}));
+      } else if (type === 'weight' && index !== undefined) {
+        setFormData(prev => ({
+          ...prev,
+          weightOptions: prev.weightOptions.map((opt, i) =>
+            i === index ? {...opt, image: publicUrl} : opt,
+          ),
+        }));
+      }
+
+      setUploading(false);
+      setUploadProgress(0);
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload image.');
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'main' | 'weight',
+    index?: number,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB.');
+      return;
+    }
+
+    handleImageUpload(file, type, index);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,19 +257,65 @@ export default function AddProductModal({
             />
           </div>
 
+          {/* Main Image Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL
+              Product Image *
             </label>
-            <input
-              type="url"
-              value={formData.image}
-              onChange={e =>
-                setFormData(prev => ({...prev, image: e.target.value}))
-              }
-              placeholder="https://example.com/image.jpg"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-            />
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={e =>
+                    setFormData(prev => ({...prev, image: e.target.value}))
+                  }
+                  placeholder="Image URL or upload below"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                />
+              </div>
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={e => handleFileSelect(e, 'main')}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload
+                </button>
+              </div>
+            </div>
+            {uploading && (
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{width: `${uploadProgress}%`}}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Uploading... {uploadProgress}%
+                </p>
+              </div>
+            )}
+            {formData.image && (
+              <div className="mt-2 relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
+                <Image
+                  src={formData.image}
+                  alt="Product preview"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
           </div>
 
           {/* Weight Options */}
@@ -225,15 +358,34 @@ export default function AddProductModal({
                     }
                     className="w-24 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
                   />
-                  <input
-                    type="url"
-                    placeholder="Image URL"
-                    value={option.image}
-                    onChange={e =>
-                      updateWeightOption(index, 'image', e.target.value)
-                    }
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm"
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="Image URL"
+                      value={option.image || ''}
+                      onChange={e =>
+                        updateWeightOption(index, 'image', e.target.value)
+                      }
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm pr-20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = e => {
+                          const file = (e.target as HTMLInputElement)
+                            .files?.[0];
+                          if (file) handleImageUpload(file, 'weight', index);
+                        };
+                        input.click();
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                      Upload
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeWeightOption(index)}
@@ -257,7 +409,8 @@ export default function AddProductModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-2.5 bg-primary text-[#162210] font-bold rounded-xl hover:bg-primary/90 transition-all shadow-sm hover:shadow-md"
+              disabled={uploading}
+              className="flex-1 px-6 py-2.5 bg-primary text-[#162210] font-bold rounded-xl hover:bg-primary/90 transition-all shadow-sm hover:shadow-md disabled:opacity-50"
             >
               Add Product
             </button>

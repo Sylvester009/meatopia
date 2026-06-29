@@ -1,9 +1,19 @@
+// app/admin/dashboard/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {useRouter} from 'next/navigation';
+import {supabase} from '@/lib/supabase';
+import {
+  getAllProducts,
+  deleteProduct,
+  Product,
+  createProduct,
+  updateProduct,
+} from '@/services/productService';
 import {
   Package,
   ShoppingBag,
@@ -18,34 +28,13 @@ import {
   Clock,
   AlertCircle,
   TrendingUp,
-  TrendingDown,
-  MoreVertical,
+  LogOut,
 } from 'lucide-react';
-import {products} from '@/data/product';
-import AddEventModal from '@/components/admin/AddEventModal';
 import AddProductModal from '@/components/admin/AddProductModal';
 import EditProductModal from '@/components/admin/EditProductModal';
 import DeleteProductModal from '@/components/admin/DeleteProductModal';
-import DeleteEventModal from '@/components/admin/DeleteEventModal';
-import EditEventModal from '@/components/admin/EditEventModal';
 
 // Types
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  description: string;
-  image: string;
-  tag?: string;
-  tagColor?: string;
-  reviewsCount: number;
-  tags?: {icon?: string; label?: string; color?: string}[];
-  details?: {cookingTips?: string[]; nutritionalInfo?: string[]};
-  weightUnit?: string;
-  weightOptions?: any[];
-}
-
 interface Order {
   id: string;
   customer: string;
@@ -63,7 +52,7 @@ interface Event {
   status: 'active' | 'upcoming' | 'ended';
 }
 
-// Sample orders data (in a real app, this would come from an API)
+// Sample data
 const sampleOrders: Order[] = [
   {
     id: 'ORD-001',
@@ -107,7 +96,6 @@ const sampleOrders: Order[] = [
   },
 ];
 
-// Sample events data
 const sampleEvents: Event[] = [
   {
     id: 'EVT-001',
@@ -133,6 +121,7 @@ const sampleEvents: Event[] = [
 ];
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
@@ -140,25 +129,89 @@ export default function AdminDashboard() {
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
   const [isDeleteProductModalOpen, setIsDeleteProductModalOpen] =
     useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
-  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
-  const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [productList, setProductList] = useState(products);
-  const [orderList] = useState(sampleOrders);
-  const [eventList, setEventList] = useState(sampleEvents);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  // Initialize productList as empty array
+  const [productList, setProductList] = useState<Product[]>([]);
+  const [orderList] = useState<Order[]>(sampleOrders);
+  const [eventList] = useState<Event[]>(sampleEvents);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
 
   const itemsPerPage = 5;
 
-  // Get unique categories
+  // Fetch products on mount
+  useEffect(() => {
+    fetchProducts();
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const {
+        data: {session},
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/admin/login');
+        return;
+      }
+      setUser(session.user);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/admin/login');
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      // Use getAllProducts to get the array directly
+      const products = await getAllProducts();
+      console.log(products);
+      // Ensure products is always an array
+      setProductList(Array.isArray(products) ? products : []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to load products');
+      setProductList([]); // Reset to empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('adminLoggedIn');
+      localStorage.removeItem('adminUser');
+      document.cookie =
+        'adminLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie =
+        'adminEmail=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      router.push('/admin/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Get unique categories - with safety check
   const categories = useMemo(() => {
+    // Ensure productList is an array before using map
+    if (!Array.isArray(productList)) {
+      return ['All'];
+    }
     const cats = ['All', ...new Set(productList.map(p => p.category))];
     return cats;
   }, [productList]);
 
-  // Filter products
+  // Filter products - with safety check
   const filteredProducts = useMemo(() => {
+    // Ensure productList is an array
+    if (!Array.isArray(productList)) {
+      return [];
+    }
     return productList.filter(product => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,10 +231,10 @@ export default function AdminDashboard() {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
-  // Stats
+  // Stats - with safety check
   const stats = useMemo(
     () => ({
-      totalProducts: productList.length,
+      totalProducts: Array.isArray(productList) ? productList.length : 0,
       pendingOrders: orderList.filter(o => o.status === 'pending').length,
       completedOrders: orderList.filter(o => o.status === 'completed').length,
       activeEvents: eventList.filter(e => e.status === 'active').length,
@@ -190,47 +243,77 @@ export default function AdminDashboard() {
   );
 
   // Handlers
-  const handleAddProduct = (newProduct: any) => {
-    setProductList(prev => [newProduct, ...prev]);
-    setIsAddProductModalOpen(false);
-  };
+  const handleAddProduct = async (newProduct: any) => {
+  try {
+    setLoading(true);
+    
+    // Create the product in Supabase
+    const createdProduct = await createProduct(newProduct);
+    
+    if (createdProduct) {
+      // Refresh the product list
+      await fetchProducts();
+      setIsAddProductModalOpen(false);
+      // Optional: Show success message
+      console.log('Product created successfully:', createdProduct);
+    } else {
+      setError('Failed to create product');
+    }
+  } catch (err) {
+    console.error('Error creating product:', err);
+    setError('Failed to create product. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleEditProduct = (updatedProduct: any) => {
-    setProductList(prev =>
-      prev.map(p => (p.id === updatedProduct.id ? updatedProduct : p)),
-    );
-    setIsEditProductModalOpen(false);
-    setSelectedProduct(null);
-  };
-
-  const handleDeleteProduct = () => {
-    if (selectedProduct) {
-      setProductList(prev => prev.filter(p => p.id !== selectedProduct.id));
-      setIsDeleteProductModalOpen(false);
+const handleEditProduct = async (updatedProduct: any) => {
+  try {
+    setLoading(true);
+    
+    // Update the product in Supabase
+    const updated = await updateProduct(updatedProduct.id, updatedProduct);
+    
+    if (updated) {
+      // Refresh the product list
+      await fetchProducts();
+      setIsEditProductModalOpen(false);
       setSelectedProduct(null);
+      // Optional: Show success message
+      console.log('Product updated successfully:', updated);
+    } else {
+      setError('Failed to update product');
     }
-  };
+  } catch (err) {
+    console.error('Error updating product:', err);
+    setError('Failed to update product. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleAddEvent = (newEvent: any) => {
-    setEventList(prev => [newEvent, ...prev]);
-    setIsAddEventModalOpen(false);
-  };
-
-  const handleEditEvent = (updatedEvent: any) => {
-    setEventList(prev =>
-      prev.map(e => (e.id === updatedEvent.id ? updatedEvent : e)),
-    );
-    setIsEditEventModalOpen(false);
-    setSelectedEvent(null);
-  };
-
-  const handleDeleteEvent = () => {
-    if (selectedEvent) {
-      setEventList(prev => prev.filter(e => e.id !== selectedEvent.id));
-      setIsDeleteEventModalOpen(false);
-      setSelectedEvent(null);
-    }
-  };
+const handleDeleteProduct = async () => {
+  if (!selectedProduct) return;
+  
+  try {
+    setLoading(true);
+    
+    // Delete the product from Supabase
+    await deleteProduct(selectedProduct.id);
+    
+    // Refresh the product list
+    await fetchProducts();
+    setIsDeleteProductModalOpen(false);
+    setSelectedProduct(null);
+    // Optional: Show success message
+    console.log('Product deleted successfully');
+  } catch (err) {
+    console.error('Error deleting product:', err);
+    alert('Failed to delete product');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -258,9 +341,36 @@ export default function AdminDashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={fetchProducts}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header with Logout */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -287,8 +397,15 @@ export default function AdminDashboard() {
             >
               View Store
             </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 transition-colors px-3 py-2 rounded-lg hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-              A
+              {user?.email?.charAt(0).toUpperCase() || 'A'}
             </div>
           </div>
         </div>
@@ -312,7 +429,7 @@ export default function AdminDashboard() {
             </div>
             <div className="mt-4 flex items-center gap-2 text-xs text-green-600">
               <TrendingUp className="w-4 h-4" />
-              <span>+12% this month</span>
+              <span>Live inventory</span>
             </div>
           </div>
 
@@ -376,7 +493,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Products Table - Full Width */}
+        {/* Products Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
           <div className="p-6 border-b border-gray-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -459,11 +576,15 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden">
                           <Image
-                            src={product.image}
+                            src={product.image || '/images/placeholder.png'}
                             alt={product.name}
                             width={48}
                             height={48}
                             className="w-full h-full object-cover"
+                            onError={e => {
+                              (e.target as HTMLImageElement).src =
+                                '/images/placeholder.png';
+                            }}
                           />
                         </div>
                         <div>
@@ -527,33 +648,34 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || totalPages === 0}
                 className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              {Array.from({length: Math.min(3, totalPages)}, (_, i) => {
-                const page = currentPage + i - 1;
-                if (page < 1 || page > totalPages) return null;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                      currentPage === page
-                        ? 'bg-primary text-[#162210]'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
+              {totalPages > 0 &&
+                Array.from({length: Math.min(3, totalPages)}, (_, i) => {
+                  const page = currentPage + i - 1;
+                  if (page < 1 || page > totalPages) return null;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                        currentPage === page
+                          ? 'bg-primary text-[#162210]'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
               <button
                 onClick={() =>
                   setCurrentPage(prev => Math.min(totalPages, prev + 1))
                 }
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages === 0}
                 className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -564,7 +686,7 @@ export default function AdminDashboard() {
 
         {/* Orders and Events - 2 Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Orders Table - 50% */}
+          {/* Orders Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -628,7 +750,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Events Table - 50% */}
+          {/* Events Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -637,7 +759,7 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-500">Manage special events</p>
                 </div>
                 <button
-                  onClick={() => setIsAddEventModalOpen(true)}
+                  onClick={() => setIsAddProductModalOpen(true)}
                   className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-[#162210] px-4 py-2 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-md active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
@@ -696,22 +818,10 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setIsEditEventModalOpen(true);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
-                          >
+                          <button className="p-1.5 text-gray-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setIsDeleteEventModalOpen(true);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
-                          >
+                          <button className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -724,6 +834,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Modals */}
       <AddProductModal
         isOpen={isAddProductModalOpen}
         onClose={() => setIsAddProductModalOpen(false)}
@@ -746,29 +858,6 @@ export default function AdminDashboard() {
         }}
         onConfirm={handleDeleteProduct}
         product={selectedProduct}
-      />
-      <AddEventModal
-        isOpen={isAddEventModalOpen}
-        onClose={() => setIsAddEventModalOpen(false)}
-        onAddEvent={handleAddEvent}
-      />
-      <EditEventModal
-        isOpen={isEditEventModalOpen}
-        onClose={() => {
-          setIsEditEventModalOpen(false);
-          setSelectedEvent(null);
-        }}
-        onSave={handleEditEvent}
-        event={selectedEvent}
-      />
-      <DeleteEventModal
-        isOpen={isDeleteEventModalOpen}
-        onClose={() => {
-          setIsDeleteEventModalOpen(false);
-          setSelectedEvent(null);
-        }}
-        onConfirm={handleDeleteEvent}
-        event={selectedEvent}
       />
     </div>
   );
