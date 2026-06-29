@@ -1,30 +1,87 @@
 'use client';
 
-import {useState, useEffect, useMemo} from 'react';
-import ProductCard from '@/components/productCards';
+import {useState, useEffect, useMemo, useCallback} from 'react';
 import {useInfiniteScroll} from '@/hooks/useInfiniteScroll';
-import {products, categories, Product} from '@/data/product';
 import {useSearch} from '@/context/SearchContext';
+import {getProducts, getCategories} from '@/services/productService';
+import type {Product} from '@/services/productService';
+import ProductCard from '@/components/productCards';
 
 const ITEMS_PER_PAGE = 8;
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All Meats');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All Meats']);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const {searchTerm} = useSearch();
 
-  // Filter products by category
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(['All Meats', ...data]);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+        // Keep default categories if API fails
+        setCategories([
+          'All Meats',
+          'Beef',
+          'Goat Meat',
+          'Chicken',
+          'Turkey',
+          'Rabbit',
+          'Meat Sharing',
+        ]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch products when category changes
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsInitialLoading(true);
+      setError(null);
+
+      try {
+        const params: any = {
+          limit: 100,
+          page: 1,
+        };
+
+        if (selectedCategory !== 'All Meats') {
+          params.category = selectedCategory;
+        }
+
+        const data = await getProducts(params);
+        setProducts(data.products || []);
+
+        setPage(1);
+        const initialProducts = (data.products || []).slice(0, ITEMS_PER_PAGE);
+        setDisplayedProducts(initialProducts);
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        setError('Failed to load products. Please try again.');
+        setProducts([]);
+        setDisplayedProducts([]);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [selectedCategory]);
+
+  // Filter products by search term (client-side)
   const filteredProducts = useMemo(() => {
     let result = products;
 
-    // Category filter
-    if (selectedCategory !== 'All Meats') {
-      result = result.filter(product => product.category === selectedCategory);
-    }
-
-    // Search filter
     if (searchTerm.trim() !== '') {
       result = result.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -32,20 +89,26 @@ export default function Home() {
     }
 
     return result;
-  }, [selectedCategory, searchTerm]);
+  }, [products, searchTerm]);
+
+  // Reset displayed products when search changes
+  useEffect(() => {
+    const initialProducts = filteredProducts.slice(0, ITEMS_PER_PAGE);
+    setDisplayedProducts(initialProducts);
+    setPage(1);
+  }, [filteredProducts]);
 
   // Calculate total pages
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const hasMore = page < totalPages;
 
   // Load more products
-  const loadMoreProducts = () => {
+  const loadMoreProducts = useCallback(() => {
     if (!hasMore || isLoading) return;
 
     setIsLoading(true);
     setTimeout(() => {
       const nextPage = page + 1;
-      // const startIndex = 0;
       const endIndex = nextPage * ITEMS_PER_PAGE;
       const newProducts = filteredProducts.slice(0, endIndex);
 
@@ -53,15 +116,7 @@ export default function Home() {
       setPage(nextPage);
       setIsLoading(false);
     }, 300);
-  };
-
-  // Initialize displayed products
-  useEffect(() => {
-    const initialProducts = filteredProducts.slice(0, ITEMS_PER_PAGE);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDisplayedProducts(initialProducts);
-    setPage(1);
-  }, [filteredProducts]);
+  }, [hasMore, isLoading, page, filteredProducts]);
 
   // Use infinite scroll hook
   const {loadMoreRef} = useInfiniteScroll({
@@ -70,6 +125,35 @@ export default function Home() {
     onLoadMore: loadMoreProducts,
     threshold: 100,
   });
+
+  // Loading state
+  if (isInitialLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-[#6f8961]">Loading premium meats...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden">
@@ -91,6 +175,7 @@ export default function Home() {
               and delivered to your doorstep across Nigeria.
             </p>
           </div>
+
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-white p-2 rounded-xl border border-[#e2e8e2]">
             <div className="flex gap-2 flex-wrap">
               {categories.map(category => (
@@ -114,6 +199,7 @@ export default function Home() {
               </span>
             </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {displayedProducts.map(product => (
               <ProductCard key={product.id} product={product} />

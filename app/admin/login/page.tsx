@@ -1,8 +1,10 @@
+// app/admin/login/page.tsx
 'use client';
 
 import {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Image from 'next/image';
+import {supabase} from '@/lib/supabase'; // Use client-side supabase, not admin
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -15,7 +17,6 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // app/admin/login/page.tsx - Updated handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -28,31 +29,58 @@ export default function AdminLoginPage() {
       return;
     }
 
-    // Demo credentials
-    const validEmail = 'meatopia.ng@gmail.com';
-    const validPassword = 'admin123';
+    try {
+      // Sign in with Supabase Auth (using client-side supabase)
+      const {data, error: signInError} = await supabase.auth.signInWithPassword(
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+      );
 
-    // Simulate API call
-    setTimeout(() => {
-      if (
-        formData.email === validEmail &&
-        formData.password === validPassword
-      ) {
-        // Set localStorage for client-side checks
-        localStorage.setItem('adminLoggedIn', 'true');
-
-        // Set cookie for middleware/server-side checks
-        document.cookie =
-          'adminLoggedIn=true; path=/; max-age=86400; samesite=strict';
-
-        // Redirect to dashboard
-        router.push('/admin/dashboard');
-        router.refresh(); // Refresh to trigger middleware
-      } else {
+      if (signInError) {
+        console.error('Sign in error:', signInError);
         setError('Invalid email or password');
         setLoading(false);
+        return;
       }
-    }, 1000);
+
+      // Check if user is admin
+      const user = data.user;
+      const isAdmin =
+        user?.user_metadata?.role === 'admin' ||
+        user?.email === 'meatopia.ng@gmail.com';
+
+      if (!isAdmin) {
+        // Sign out if not admin
+        await supabase.auth.signOut();
+        setError('Access denied. Admin privileges required.');
+        setLoading(false);
+        return;
+      }
+
+      // Store session in localStorage for client-side checks
+      localStorage.setItem('adminLoggedIn', 'true');
+      localStorage.setItem(
+        'adminUser',
+        JSON.stringify({
+          email: user?.email,
+          name: user?.user_metadata?.full_name || 'Admin',
+        }),
+      );
+
+      // Set cookies for middleware
+      document.cookie = `adminLoggedIn=true; path=/; max-age=${formData.rememberMe ? 2592000 : 86400}; samesite=strict`;
+      document.cookie = `adminEmail=${user?.email}; path=/; max-age=${formData.rememberMe ? 2592000 : 86400}; samesite=strict`;
+
+      // Redirect to dashboard
+      router.push('/admin/dashboard');
+      router.refresh(); // Refresh to trigger middleware
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An unexpected error occurred');
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
