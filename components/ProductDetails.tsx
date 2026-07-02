@@ -64,9 +64,9 @@ export default function ProductDetails({product}: ProductDetailsProps) {
     }));
   };
 
-  const hasCookingTips = product.cookingTips && product.cookingTips.length > 0;
+  const hasCookingTips = product.cooking_tips && product.cooking_tips.length > 0;
   const hasNutritionalInfo =
-    product.nutritionalInfo && product.nutritionalInfo.length > 0;
+    product.nutritionalInfo && product.nutritional_info.length > 0;
   const hasDetails = hasCookingTips || hasNutritionalInfo;
 
   return (
@@ -98,25 +98,6 @@ export default function ProductDetails({product}: ProductDetailsProps) {
           </div>
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center gap-3 mt-2">
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < Math.floor(product.rating || 0)
-                    ? 'fill-primary text-primary'
-                    : 'fill-gray-200 text-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-sm text-gray-500">
-            {product.reviewsCount || 0} reviews
-          </span>
-        </div>
-      </div>
 
       {/* Price */}
       <div className="flex items-baseline gap-3">
@@ -136,7 +117,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
       {/* Weight Selection */}
       {product.weight_options && product.weight_options.length > 0 && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 mb-2">
             Select Weight
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -154,25 +135,6 @@ export default function ProductDetails({product}: ProductDetailsProps) {
               </button>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Tags/Badges */}
-      {product.tags && product.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {product.tags.map(tag => (
-            <span
-              key={tag.id}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                tag.color === 'primary'
-                  ? 'bg-primary/10 text-primary border border-primary/20'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {tag.icon && <span>{tag.icon}</span>}
-              {tag.label}
-            </span>
-          ))}
         </div>
       )}
 
@@ -218,7 +180,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
                     Cooking Tips
                   </h4>
                   <ul className="space-y-1.5">
-                    {product.cookingTips!.map(tip => (
+                    {product.cooking_tips!.map(tip => (
                       <li
                         key={tip.id}
                         className="text-sm text-gray-600 flex items-start gap-2"
@@ -236,7 +198,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
                     Nutritional Information
                   </h4>
                   <ul className="space-y-1.5">
-                    {product.nutritionalInfo!.map(info => (
+                    {product.nutritiona_info!.map(info => (
                       <li
                         key={info.id}
                         className="text-sm text-gray-600 flex items-start gap-2"
