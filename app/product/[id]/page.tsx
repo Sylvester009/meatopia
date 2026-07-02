@@ -23,7 +23,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     const galleryImages = [
       product.image,
       ...(product.images?.map(img => img.url) || []),
-      ...(product.weightOptions?.map(opt => opt.image).filter(Boolean) || []),
+      ...(product.weight_options?.map(opt => opt.image).filter(Boolean) || []),
     ].filter(Boolean) as string[];
 
     return (
