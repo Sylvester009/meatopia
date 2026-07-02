@@ -180,20 +180,7 @@ export default function ProductCard({product}: ProductCardProps) {
             </div>
           )}
 
-          {/* Tags */}
-          {product.tags && product.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {product.tags.slice(0, 2).map(tag => (
-                <span
-                  key={tag.id}
-                  className="text-[10px] bg-[#eef2ee] text-[#6f8961] px-2 py-0.5 rounded flex items-center gap-1"
-                >
-                  {tag.icon && <span className="text-[10px]">{tag.icon}</span>}
-                  {tag.label}
-                </span>
-              ))}
-            </div>
-          )}
+          
 
           {/* Price and Add to Cart */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#eef2ee]">
