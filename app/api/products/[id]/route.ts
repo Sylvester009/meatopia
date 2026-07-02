@@ -1,26 +1,15 @@
 // app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductImageUrl } from '@/lib/imageUtils';
-import { createServiceRoleClient } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Use service role client for API routes
-    const supabase = createServiceRoleClient();
-    
+
     const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Product ID is required' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Fetching product with ID:', id);
 
     const { data: product, error } = await supabase
       .from('products')
@@ -36,23 +25,7 @@ export async function GET(
       .single();
 
     if (error) {
-      console.error('Supabase error fetching product:', {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-        id
-      });
-      
-      return NextResponse.json(
-        { 
-          error: 'Product not found', 
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined 
-        },
-        { status: 404 }
-      );
-    }
-
-    if (!product) {
+      console.error('Error fetching product:', error);
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
@@ -75,12 +48,9 @@ export async function GET(
 
     return NextResponse.json({ product: transformedProduct });
   } catch (error) {
-    console.error('Error in product API:', error);
+    console.error('Error fetching product:', error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined 
-      },
+      { error: 'Failed to fetch product' },
       { status: 500 }
     );
   }
