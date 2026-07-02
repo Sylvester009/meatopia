@@ -1,32 +1,30 @@
 // lib/supabase/index.ts
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
 
 // Validate environment variables
 if (!supabaseUrl) {
   throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
 }
 
-// For client-side components - use anon key
-if (!supabaseAnonKey) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY');
+if (!supabasePublishableKey) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 }
 
-// For API routes - use service role key if available
+// For API routes - use service key if available
 export const supabase = createClient(
   supabaseUrl,
   process.env.NODE_ENV === 'production' && supabaseServiceKey 
     ? supabaseServiceKey 
-    : supabaseAnonKey,
+    : supabasePublishableKey,
   {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
-    // Add these for better serverless performance
     db: {
       schema: 'public',
     },
@@ -38,10 +36,10 @@ export const supabase = createClient(
   }
 );
 
-// For client-side only (with anon key)
+// For client-side only (with publishable key)
 export const supabaseClient = createClient(
   supabaseUrl,
-  supabaseAnonKey,
+  supabasePublishableKey,
   {
     auth: {
       persistSession: true,
@@ -52,9 +50,9 @@ export const supabaseClient = createClient(
 
 // Export a function to create a service role client for API routes
 export const createServiceRoleClient = () => {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
   if (!serviceKey) {
-    console.warn('SUPABASE_SERVICE_ROLE_KEY is not set, falling back to anon key');
+    console.warn('SUPABASE_SERVICE_KEY is not set, falling back to publishable key');
     return supabase;
   }
   return createClient(supabaseUrl, serviceKey, {
@@ -64,3 +62,6 @@ export const createServiceRoleClient = () => {
     },
   });
 };
+
+// Keep your existing export for backward compatibility
+export { supabase as default };
