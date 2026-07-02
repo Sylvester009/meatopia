@@ -1,10 +1,13 @@
 // app/api/products/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductImageUrl } from '@/lib/imageUtils';
-import { supabase } from '@/lib/supabase';
+import { createServiceRoleClient } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
+    // Use service role client for API routes
+    const supabase = createServiceRoleClient();
+    
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -15,6 +18,8 @@ export async function GET(request: NextRequest) {
 
     const start = (page - 1) * limit;
     const end = start + limit - 1;
+
+    console.log('Fetching products with params:', { category, limit, page, search, sortBy, sortOrder });
 
     // Build query
     let query = supabase
@@ -42,15 +47,37 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching products:', error);
+      console.error('Supabase error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
       return NextResponse.json(
-        { error: 'Failed to fetch products' },
+        { 
+          error: 'Failed to fetch products', 
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        },
         { status: 500 }
       );
     }
 
+    // Check if data exists
+    if (!data || data.length === 0) {
+      return NextResponse.json({
+        products: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      });
+    }
+
     // Transform image URLs
-    const transformedProducts = (data || []).map((product: any) => ({
+    const transformedProducts = data.map((product: any) => ({
       ...product,
       image: getProductImageUrl(product.image),
       product_images: (product.product_images || []).map((img: any) => ({
@@ -73,9 +100,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error in products API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { 
+        error: 'Internal server error', 
+        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined 
+      },
       { status: 500 }
     );
   }
