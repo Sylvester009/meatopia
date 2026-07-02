@@ -43,7 +43,7 @@ export default function ProductCard({product}: ProductCardProps) {
   };
 
   // Get weight options
-  const weightOptions = product.weightOptions || [];
+  const weightOptions = product.weight_options || [];
   const hasWeightOptions = weightOptions.length > 0;
 
   // Default to first weight option or create a default
