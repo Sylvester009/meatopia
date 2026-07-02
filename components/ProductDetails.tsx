@@ -23,7 +23,7 @@ interface ProductDetailsProps {
 export default function ProductDetails({product}: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedWeight, setSelectedWeight] = useState(
-    product.weightOptions?.[0] || null,
+    product.weight_options?.[0] || null,
   );
   const [expandedSections, setExpandedSections] = useState({
     description: true,
@@ -134,13 +134,13 @@ export default function ProductDetails({product}: ProductDetailsProps) {
       </div>
 
       {/* Weight Selection */}
-      {product.weightOptions && product.weightOptions.length > 0 && (
+      {product.weight_options && product.weight_options.length > 0 && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700">
             Select Weight
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {product.weightOptions.map(weight => (
+            {product.weight_options.map(weight => (
               <button
                 key={weight.id || weight.label}
                 onClick={() => setSelectedWeight(weight)}
