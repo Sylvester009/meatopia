@@ -66,7 +66,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
 
   const hasCookingTips = product.cooking_tips && product.cooking_tips.length > 0;
   const hasNutritionalInfo =
-    product.nutritionalInfo && product.nutritional_info.length > 0;
+    product.nutritional_info && product.nutritional_info.length > 0;
   const hasDetails = hasCookingTips || hasNutritionalInfo;
 
   return (
@@ -97,7 +97,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
             </button>
           </div>
         </div>
-
+      </div>
 
       {/* Price */}
       <div className="flex items-baseline gap-3">
@@ -138,6 +138,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
         </div>
       )}
 
+     
       {/* Description - Collapsible */}
       <div className="border-t border-gray-100 pt-4">
         <button
@@ -198,7 +199,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
                     Nutritional Information
                   </h4>
                   <ul className="space-y-1.5">
-                    {product.nutritiona_info!.map(info => (
+                    {product.nutritional_info!.map(info => (
                       <li
                         key={info.id}
                         className="text-sm text-gray-600 flex items-start gap-2"
