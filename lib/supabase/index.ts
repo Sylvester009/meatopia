@@ -1,25 +1,16 @@
-// lib/supabase/index.ts
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 // Validate environment variables
-if (!supabaseUrl) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
-}
+if (!supabaseUrl) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+if (!supabasePublishableKey) throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 
-if (!supabasePublishableKey) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
-}
-
-// For API routes - use service key if available
-export const supabase = createClient(
+export const supabaseAdmin = createClient(
   supabaseUrl,
-  process.env.NODE_ENV === 'production' && supabaseServiceKey 
-    ? supabaseServiceKey 
-    : supabasePublishableKey,
+  supabaseServiceKey || supabasePublishableKey, // Falls back to publishable if no service key
   {
     auth: {
       persistSession: false,
@@ -30,14 +21,13 @@ export const supabase = createClient(
     },
     global: {
       headers: {
-        'x-application-name': 'meatopia',
+        'x-application-name': 'meatopia-admin',
       },
     },
   }
 );
 
-// For client-side only (with publishable key)
-export const supabaseClient = createClient(
+export const supabase = createClient(
   supabaseUrl,
   supabasePublishableKey,
   {
@@ -48,14 +38,12 @@ export const supabaseClient = createClient(
   }
 );
 
-// Export a function to create a service role client for API routes
 export const createServiceRoleClient = () => {
-  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
-  if (!serviceKey) {
+  if (!supabaseServiceKey) {
     console.warn('SUPABASE_SERVICE_KEY is not set, falling back to publishable key');
     return supabase;
   }
-  return createClient(supabaseUrl, serviceKey, {
+  return createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -63,5 +51,4 @@ export const createServiceRoleClient = () => {
   });
 };
 
-// Keep your existing export for backward compatibility
 export { supabase as default };
