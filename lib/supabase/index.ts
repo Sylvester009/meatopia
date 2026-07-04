@@ -13,29 +13,7 @@ if (!supabasePublishableKey) {
   throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 }
 
-// For API routes - use service key if available
-export const supabase = createClient(
-  supabaseUrl,
-  process.env.NODE_ENV === 'production' && supabaseServiceKey 
-    ? supabaseServiceKey 
-    : supabasePublishableKey,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-    db: {
-      schema: 'public',
-    },
-    global: {
-      headers: {
-        'x-application-name': 'meatopia',
-      },
-    },
-  }
-);
-
-// For client-side only (with publishable key)
+// CLIENT-SIDE Supabase instance (ALWAYS uses publishable key)
 export const supabaseClient = createClient(
   supabaseUrl,
   supabasePublishableKey,
@@ -47,12 +25,11 @@ export const supabaseClient = createClient(
   }
 );
 
-// Export a function to create a service role client for API routes
+// SERVER-SIDE only - Service role client (for API routes, server actions, etc.)
 export const createServiceRoleClient = () => {
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
   if (!serviceKey) {
-    console.warn('SUPABASE_SERVICE_KEY is not set, falling back to publishable key');
-    return supabase;
+    throw new Error('SUPABASE_SERVICE_KEY is not set');
   }
   return createClient(supabaseUrl, serviceKey, {
     auth: {
@@ -62,4 +39,8 @@ export const createServiceRoleClient = () => {
   });
 };
 
-export { supabase as default };
+// For backwards compatibility - use supabaseClient for browser code
+export const supabase = supabaseClient;
+
+// Export for convenience
+export default supabase;
