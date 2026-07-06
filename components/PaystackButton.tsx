@@ -1,6 +1,7 @@
 'use client';
 
 import Script from 'next/script';
+import { toast } from 'sonner';
 
 type PaystackSuccessResponse = {
   reference: string;
@@ -53,7 +54,7 @@ export default function PayButton({
     e.preventDefault();
 
     if (!window.PaystackPop) {
-      alert('Payment system not ready. Refresh page.');
+      toast.error('Payment system not ready. Refresh page.');
       return;
     }
 
@@ -69,7 +70,7 @@ export default function PayButton({
       },
 
       onClose: function () {
-        alert('Transaction was not completed');
+        toast.error('Transaction was not completed');
       },
     });
 
