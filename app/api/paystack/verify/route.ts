@@ -1,15 +1,11 @@
-// app/api/verify-payment/route.ts
-
 import { NextResponse } from "next/server"
 import { CartItem } from "@/context/CartContext"
 import { getTransporter } from "@/lib/mailer"
 
 export async function POST(req: Request) {
   try {
-    const transporter = getTransporter()
-
     const body = await req.json()
-    const { reference, cart, formData, total, deliveryMethod } = body
+    const { reference, cart, formData, total, deliveryMethod, deliveryLocation } = body
 
     if (!reference) {
       return NextResponse.json(
@@ -18,20 +14,18 @@ export async function POST(req: Request) {
       )
     }
 
-    // VERIFY TRANSACTION WITH PAYSTACK
     const verifyRes = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
         },
+        signal: AbortSignal.timeout(5000),
       }
     )
 
     const verifyData = await verifyRes.json()
 
-
-    // CHECK PAYSTACK RESPONSE
     if (!verifyData.status || verifyData.data?.status !== "success") {
       return NextResponse.json({
         success: false,
@@ -39,32 +33,47 @@ export async function POST(req: Request) {
       })
     }
 
-    // CHECK AMOUNT (PAYSTACK RETURNS KOBO)
     const paidAmount = verifyData.data.amount / 100
-
     if (paidAmount !== total) {
-
       return NextResponse.json({
         success: false,
         message: "Amount mismatch",
       })
     }
 
-    // FORMAT CART ITEMS
-    const itemsHTML = cart
-      .map(
-        (item: CartItem) => `
+    const response = NextResponse.json({
+      success: true,
+      message: "Payment verified and order processed",
+    })
+
+    processEmails(cart, formData, total, deliveryMethod, deliveryLocation, reference).catch(console.error)
+
+    return response
+
+  } catch (error) {
+    console.error("ORDER PROCESS ERROR:", error)
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    )
+  }
+}
+
+async function processEmails(cart: CartItem[], formData: { firstName: any; lastName: any; phone: any; email: any; address: any; city: any; state: any }, total: { toLocaleString: () => any }, deliveryMethod: any, deliveryLocation: any, reference: any) {
+  try {
+    const transporter = getTransporter()
+
+    // Format cart items
+    const itemsHTML = cart.map((item: CartItem) => `
       <tr>
         <td>${item.name}</td>
         <td>${item.weight}</td>
         <td>${item.quantity}</td>
         <td>₦${(item.unitPrice * item.quantity).toLocaleString()}</td>
       </tr>
-    `
-      )
-      .join("")
+    `).join("")
 
-    // BUSINESS EMAIL
+    // Send business email
     await transporter.sendMail({
       from: `"Meatopia Orders" <${process.env.EMAIL_USER}>`,
       to: process.env.BUSINESS_EMAIL,
@@ -81,7 +90,7 @@ export async function POST(req: Request) {
         </p>
 
         <h3>Delivery</h3>
-        <p>${deliveryMethod}</p>
+        <p>${deliveryMethod} - ${deliveryLocation}</p>
 
         <h3>Order Items</h3>
         <table border="1" cellpadding="8">
@@ -101,7 +110,7 @@ export async function POST(req: Request) {
       `,
     })
 
-    // CUSTOMER EMAIL
+    // Send customer email
     await transporter.sendMail({
       from: `"Meatopia" <${process.env.EMAIL_USER}>`,
       to: formData.email,
@@ -133,14 +142,8 @@ export async function POST(req: Request) {
         <p>— Meatopia Team 🥩</p>
       `,
     })
-
-    return NextResponse.json({
-      success: true,
-      message: "Payment verified and order processed",
-    })
   } catch (error) {
-    console.error("ORDER PROCESS ERROR:", error)
-
+    console.error("Email sending error:", error)
     return NextResponse.json(
       { success: false, message: "Server error" },
       { status: 500 }
