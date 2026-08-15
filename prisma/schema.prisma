@@ -8,18 +8,18 @@ datasource db {
 }
 
 model Product {
-  id              String          @id @default(cuid())
-  name            String
-  category        String
-  price           Int
-  description     String
-  image           String
-  tag             String?
-  tagColor        String?
-  rating          Float?
-  reviewsCount    Int             @default(0)
-  weightUnit      String?
-  
+  id           String  @id @default(cuid())
+  name         String
+  category     String
+  price        Int
+  description  String
+  image        String
+  tag          String?
+  tagColor     String?
+  rating       Float?
+  reviewsCount Int     @default(0)
+  weightUnit   String?
+
   // Related models
   tags            Tag[]
   cookingTips     CookingTip[]
@@ -77,4 +77,48 @@ model ProductImage {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_images")
+}
+
+model Events {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String
+  fullDescription String
+  image           String
+  startDate       DateTime @default(now())
+  endDate         DateTime
+  location        String
+  discount        String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Orders {
+  id              Int      @id @default(autoincrement())
+  firstName       String
+  lastName        String
+  phone           String
+  email           String
+  address         String
+  city            String
+  state           String
+  deliveryMethod  String
+  deliveryLocation String
+  totalAmount     Float
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  name      String
+  weight    String
+  quantity  Int
+  unitPrice Float
+  order     Orders  @relation(fields: [orderId], references: [id])
 }
