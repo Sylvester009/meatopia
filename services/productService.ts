@@ -256,7 +256,7 @@ export const productService = {
         }
     },
 
-    // ✅ UPDATE PRODUCT
+    // UPDATE PRODUCT
     async updateProduct(id: string, productData: Partial<Product>): Promise<Product | null> {
         try {
             // Step 1: Prepare update data

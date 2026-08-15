@@ -796,7 +796,7 @@ const handleDeleteProduct = async () => {
                           <p className="text-sm font-medium text-gray-900">
                             {event.title}
                           </p>
-                          <p className="text-xs text-gray-500 truncate max-w-[120px]">
+                          <p className="text-xs text-gray-500 truncate max-w-30">
                             {event.description}
                           </p>
                         </div>
