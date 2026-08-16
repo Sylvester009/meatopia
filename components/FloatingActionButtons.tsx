@@ -1,51 +1,60 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react';
 import Link from 'next/link';
-import { Calendar, MessageCircle } from 'lucide-react';
-import { getEvents } from '@/lib/events';
+import {Calendar, MessageCircle} from 'lucide-react';
 
 export default function FloatingActionButtons() {
   const [eventsCount, setEventsCount] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+  const [__isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch active events count
     const fetchEventsCount = async () => {
       try {
-        const count = getEvents.length;
-        setEventsCount(count);
+        const response = await fetch('/api/events?isActive=true', {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const result = await response.json();
+        const activeEvents = result.data || [];
+        setEventsCount(activeEvents.length);
       } catch (error) {
         console.error('Failed to fetch events count:', error);
+        setEventsCount(0);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchEventsCount();
 
-    const interval = setInterval(fetchEventsCount, 300000); // Update every 5 minutes
+    // Update every 5 minutes
+    const interval = setInterval(fetchEventsCount, 300000);
 
+    // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, []);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  const whatsappMessage = encodeURIComponent('Hi! I would like to inquire about your meat products.');
+  const whatsappMessage = encodeURIComponent(
+    'Hi! I would like to inquire about your meat products.',
+  );
 
   return (
     <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
       {/* Events Button */}
-      <Link
-        href="/special-events"
-        className="relative group"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+      <Link href="/special-events" className="relative group">
         <div className="relative">
           <div className="bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110">
             <Calendar className="w-6 h-6" />
           </div>
-          {eventsCount > 0  && (
+          {eventsCount > 0 && (
             <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
-              {eventsCount || getEvents.length}
+              {eventsCount}
             </div>
           )}
         </div>

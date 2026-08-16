@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
-  Clock,
   MapPin,
   Tag,
   Sparkles,
@@ -13,26 +12,9 @@ import {
   Share2,
   ArrowRight,
   Star,
-  Gift,
-  Users,
 } from 'lucide-react';
 import Image from 'next/image';
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  fullDescription: string;
-  image?: string;
-  startDate: string;
-  endDate: string;
-  location?: string;
-  discount?: string;
-  category?: string;
-  isPopular?: boolean;
-  maxAttendees?: number;
-  price?: number;
-}
+import {Event} from '@/lib/events';
 
 interface EventsListProps {
   events: Event[];
@@ -57,20 +39,8 @@ export default function EventsList({events}: EventsListProps) {
     setSavedEvents(newSaved);
   };
 
-  // Group events by category
-  const groupedEvents = events.reduce(
-    (acc, event) => {
-      const category = event.category || 'Other';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(event);
-      return acc;
-    },
-    {} as Record<string, Event[]>,
-  );
-
   // Separate featured events
-  const featuredEvents = events.filter(e => e.isPopular);
-  const regularEvents = events.filter(e => !e.isPopular);
+  const featuredEvents = events.filter(e => e.isActive);
 
   return (
     <div className="space-y-12">
@@ -98,37 +68,6 @@ export default function EventsList({events}: EventsListProps) {
           </div>
         </section>
       )}
-
-      {/* All Events Grouped by Category */}
-      {Object.entries(groupedEvents).map(([category, categoryEvents]) => {
-        // Skip if category only has featured events and they're already shown
-        const nonFeaturedEvents = categoryEvents.filter(e => !e.isPopular);
-        if (nonFeaturedEvents.length === 0) return null;
-
-        return (
-          <section key={category}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-8 bg-[#6f8961] rounded-full" />
-              <h2 className="text-2xl font-bold text-[#131811]">{category}</h2>
-              <span className="text-sm text-[#6f8961] font-medium">
-                ({nonFeaturedEvents.length} events)
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {nonFeaturedEvents.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isExpanded={expandedId === event.id}
-                  onToggle={() => toggleExpand(event.id)}
-                  isSaved={savedEvents.has(event.id)}
-                  onSave={e => toggleSave(event.id, e)}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
 
       {/* No Events State */}
       {events.length === 0 && (
@@ -172,14 +111,12 @@ function EventCard({
     });
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const isMultiDay = event.startDate !== event.endDate;
+
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  const whatsappMessage = encodeURIComponent(
+    `Hi! I would like to inquire about ${event.title}.`,
+  );
 
   return (
     <div
@@ -217,12 +154,6 @@ function EventCard({
               <span className="inline-flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full">
                 <Tag className="w-3.5 h-3.5" />
                 {event.discount}
-              </span>
-            )}
-            {event.price === 0 && (
-              <span className="inline-flex items-center gap-1 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                <Gift className="w-3.5 h-3.5" />
-                Free
               </span>
             )}
           </div>
@@ -294,20 +225,6 @@ function EventCard({
                   <span className="font-medium">{event.location}</span>
                 </div>
               )}
-              {event.maxAttendees && (
-                <div className="flex items-center gap-1.5 bg-[#f2f4f0] px-3 py-1.5 rounded-full">
-                  <Users className="w-4 h-4" />
-                  <span>Max {event.maxAttendees} people</span>
-                </div>
-              )}
-              {event.price !== undefined && event.price > 0 && (
-                <div className="flex items-center gap-1.5 bg-[#f2f4f0] px-3 py-1.5 rounded-full">
-                  <Tag className="w-4 h-4" />
-                  <span className="font-bold text-[#131811]">
-                    ₦{event.price.toLocaleString()}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -366,14 +283,18 @@ function EventCard({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 pt-2">
-              <button className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#6f8961] text-white font-semibold rounded-xl hover:bg-[#4a6741] transition-colors">
-                Register Now
-                <ArrowRight className="w-4 h-4" />
+              <button className="w-full inline-flex items-center gap-2 px-6 py-2.5 bg-[#6f8961] text-white font-semibold rounded-xl hover:bg-[#4a6741] transition-colors">
+                <a
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className='w-full flex items-center justify-center gap-4'
+                >
+                  <span>Book A Spot Now</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
               </button>
-              <button className="inline-flex items-center gap-2 px-6 py-2.5 border-2 border-[#6f8961] text-[#6f8961] font-semibold rounded-xl hover:bg-[#6f8961]/10 transition-colors">
-                <Calendar className="w-4 h-4" />
-                Add to Calendar
-              </button>
+              
             </div>
           </div>
         </div>

@@ -33,6 +33,8 @@ import {
 import AddProductModal from '@/components/admin/AddProductModal';
 import EditProductModal from '@/components/admin/EditProductModal';
 import DeleteProductModal from '@/components/admin/DeleteProductModal';
+import AddEventModal from '@/components/admin/AddEventModal';
+import {toast} from 'sonner';
 
 // Types
 interface Order {
@@ -48,8 +50,15 @@ interface Event {
   id: string;
   title: string;
   description: string;
-  date: string;
-  status: 'active' | 'upcoming' | 'ended';
+  fullDescription: string;
+  image?: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  discount?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Sample data
@@ -96,36 +105,13 @@ const sampleOrders: Order[] = [
   },
 ];
 
-const sampleEvents: Event[] = [
-  {
-    id: 'EVT-001',
-    title: 'Holiday Meat Bundle',
-    description: 'Get 20% off on premium holiday meat selection',
-    date: '2024-12-01',
-    status: 'active',
-  },
-  {
-    id: 'EVT-002',
-    title: 'Weekend BBQ Special',
-    description: 'Free delivery on all BBQ meat packs',
-    date: '2024-01-20',
-    status: 'upcoming',
-  },
-  {
-    id: 'EVT-003',
-    title: 'New Year Feast',
-    description: 'Exclusive discounts on party platters',
-    date: '2024-01-01',
-    status: 'ended',
-  },
-];
-
 export default function AdminDashboard() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
   const [isDeleteProductModalOpen, setIsDeleteProductModalOpen] =
     useState(false);
@@ -133,10 +119,15 @@ export default function AdminDashboard() {
   // Initialize productList as empty array
   const [productList, setProductList] = useState<Product[]>([]);
   const [orderList] = useState<Order[]>(sampleOrders);
-  const [eventList] = useState<Event[]>(sampleEvents);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
+    null,
+  );
 
   const itemsPerPage = 5;
 
@@ -144,6 +135,29 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchProducts();
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/events');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const result = await response.json();
+        setEvents(result.data || []);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Unable to load events at this time.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   const checkAuth = async () => {
@@ -237,83 +251,114 @@ export default function AdminDashboard() {
       totalProducts: Array.isArray(productList) ? productList.length : 0,
       pendingOrders: orderList.filter(o => o.status === 'pending').length,
       completedOrders: orderList.filter(o => o.status === 'completed').length,
-      activeEvents: eventList.filter(e => e.status === 'active').length,
+      activeEvents: events.filter(e => e.isActive === true).length,
     }),
-    [productList, orderList, eventList],
+    [productList, orderList, events],
   );
 
   // Handlers
   const handleAddProduct = async (newProduct: any) => {
-  try {
-    setLoading(true);
-    
-    // Create the product in Supabase
-    const createdProduct = await createProduct(newProduct);
-    
-    if (createdProduct) {
-      // Refresh the product list
-      await fetchProducts();
-      setIsAddProductModalOpen(false);
-      // Optional: Show success message
-      console.log('Product created successfully:', createdProduct);
-    } else {
-      setError('Failed to create product');
-    }
-  } catch (err) {
-    console.error('Error creating product:', err);
-    setError('Failed to create product. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
 
-const handleEditProduct = async (updatedProduct: any) => {
-  try {
-    setLoading(true);
-    
-    // Update the product in Supabase
-    const updated = await updateProduct(updatedProduct.id, updatedProduct);
-    
-    if (updated) {
+      // Create the product in Supabase
+      const createdProduct = await createProduct(newProduct);
+
+      if (createdProduct) {
+        // Refresh the product list
+        await fetchProducts();
+        setIsAddProductModalOpen(false);
+        // Optional: Show success message
+        console.log('Product created successfully:', createdProduct);
+      } else {
+        setError('Failed to create product');
+      }
+    } catch (err) {
+      console.error('Error creating product:', err);
+      setError('Failed to create product. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditProduct = async (updatedProduct: any) => {
+    try {
+      setLoading(true);
+
+      // Update the product in Supabase
+      const updated = await updateProduct(updatedProduct.id, updatedProduct);
+
+      if (updated) {
+        // Refresh the product list
+        await fetchProducts();
+        setIsEditProductModalOpen(false);
+        setSelectedProduct(null);
+        // Optional: Show success message
+        console.log('Product updated successfully:', updated);
+      } else {
+        setError('Failed to update product');
+      }
+    } catch (err) {
+      console.error('Error updating product:', err);
+      setError('Failed to update product. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!selectedProduct) return;
+
+    try {
+      setLoading(true);
+
+      // Delete the product from Supabase
+      await deleteProduct(selectedProduct.id);
+
       // Refresh the product list
       await fetchProducts();
-      setIsEditProductModalOpen(false);
+      setIsDeleteProductModalOpen(false);
       setSelectedProduct(null);
       // Optional: Show success message
-      console.log('Product updated successfully:', updated);
-    } else {
-      setError('Failed to update product');
+      console.log('Product deleted successfully');
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      alert('Failed to delete product');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('Error updating product:', err);
-    setError('Failed to update product. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-const handleDeleteProduct = async () => {
-  if (!selectedProduct) return;
-  
-  try {
-    setLoading(true);
-    
-    // Delete the product from Supabase
-    await deleteProduct(selectedProduct.id);
-    
-    // Refresh the product list
-    await fetchProducts();
-    setIsDeleteProductModalOpen(false);
-    setSelectedProduct(null);
-    // Optional: Show success message
-    console.log('Product deleted successfully');
-  } catch (err) {
-    console.error('Error deleting product:', err);
-    alert('Failed to delete product');
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      setDeletingId(eventId);
+
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete event');
+      }
+
+      const result = await response.json();
+
+      // Remove event from local state
+      setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+
+      // Show success message
+      toast.success('Event deleted successfully');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete event',
+      );
+    } finally {
+      setDeletingId(null);
+      setShowDeleteConfirm(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -330,9 +375,9 @@ const handleDeleteProduct = async () => {
 
   const getEventStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'Active':
         return 'bg-green-100 text-green-800';
-      case 'upcoming':
+      case 'Pending':
         return 'bg-blue-100 text-blue-800';
       case 'ended':
         return 'bg-gray-100 text-gray-800';
@@ -759,7 +804,7 @@ const handleDeleteProduct = async () => {
                   <p className="text-sm text-gray-500">Manage special events</p>
                 </div>
                 <button
-                  onClick={() => setIsAddProductModalOpen(true)}
+                  onClick={() => setIsAddEventModalOpen(true)}
                   className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-[#162210] px-4 py-2 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-md active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
@@ -786,7 +831,7 @@ const handleDeleteProduct = async () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {eventList.slice(0, 4).map(event => (
+                  {events.slice(0, 4).map(event => (
                     <tr
                       key={event.id}
                       className="hover:bg-gray-50/50 transition-colors"
@@ -803,27 +848,61 @@ const handleDeleteProduct = async () => {
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-gray-600">
-                          {new Date(event.date).toLocaleDateString()}
+                          {new Date(event.startDate).toLocaleDateString()}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center">
                           <span
-                            className={`px-3 py-1 text-xs font-medium rounded-full ${getEventStatusColor(event.status)}`}
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${getEventStatusColor(event.isActive ? 'Active' : 'Pending')}`}
                           >
-                            {event.status.charAt(0).toUpperCase() +
-                              event.status.slice(1)}
+                            {event.isActive ? 'Active' : 'Pending'}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-1">
-                          <button className="p-1.5 text-gray-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
-                            <Edit className="w-4 h-4" />
+                          <button
+                            onClick={() => setShowDeleteConfirm(event.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                            disabled={deletingId === event.id}
+                          >
+                            {deletingId === event.id ? (
+                              <span className="animate-spin inline-block w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
-                          <button className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {showDeleteConfirm === event.id && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                              <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+                                <h3 className="text-lg font-bold mb-4">
+                                  Delete Event?
+                                </h3>
+                                <p className="text-gray-600 mb-6">
+                                  Are you sure you want to delete this event?
+                                  This action cannot be undone.
+                                </p>
+                                <div className="flex gap-3 justify-end">
+                                  <button
+                                    onClick={() => setShowDeleteConfirm(null)}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(event.id)}
+                                    className="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded-lg"
+                                    disabled={deletingId === event.id}
+                                  >
+                                    {deletingId === event.id
+                                      ? 'Deleting...'
+                                      : 'Delete'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -858,6 +937,10 @@ const handleDeleteProduct = async () => {
         }}
         onConfirm={handleDeleteProduct}
         product={selectedProduct}
+      />
+      <AddEventModal
+        isOpen={isAddEventModalOpen}
+        onClose={() => setIsAddEventModalOpen(false)}
       />
     </div>
   );
