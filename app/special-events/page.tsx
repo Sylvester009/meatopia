@@ -1,9 +1,9 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import EventsList from '@/components/EventsList';
-import {Event} from '@/lib/events';
-import {ArrowLeft} from 'lucide-react';
+import { Event } from '@/lib/events';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SpecialEventsPage() {
@@ -38,7 +38,7 @@ export default function SpecialEventsPage() {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8 text-center">
-          🎉 Special Events
+          Special Events
         </h1>
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6f8961]"></div>
@@ -51,7 +51,7 @@ export default function SpecialEventsPage() {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8 text-center">
-          🎉 Special Events
+          Special Events
         </h1>
         <div className="text-center py-12">
           <p className="text-xl text-gray-500">{error}</p>
@@ -63,7 +63,7 @@ export default function SpecialEventsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-8 text-center">🎉 Special Events</h1>
+      <h1 className="text-4xl font-bold mb-8 text-center">Special Events</h1>
       <Link
         href="/"
         className="text-gray-700 py-2 hover:text-primary transition-colors flex items-center gap-1"

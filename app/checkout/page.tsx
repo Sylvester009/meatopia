@@ -1,10 +1,10 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {useCart} from '@/context/CartContext';
+import { useCart } from '@/context/CartContext';
 import PayButton from '@/components/PaystackButton';
-import {toast} from 'sonner';
+import { toast } from 'sonner';
 import {
   CheckCircle,
   Package,
@@ -29,18 +29,18 @@ import {
 } from 'lucide-react';
 
 const deliveryLocations = [
-  {label: 'Oluyole/Ringroad', fee: 3500},
-  {label: 'Sango/Ashi', fee: 2000},
-  {label: 'Bodija/Oshuntokun/Awolowo', fee: 2500},
-  {label: 'Akobo (₦2,500)', fee: 2500},
-  {label: 'Akobo (₦3,000)', fee: 3000},
-  {label: 'Akobo Ojuirin', fee: 3200},
-  {label: 'Ojoo', fee: 2000},
-  {label: 'Elebu/Challenge', fee: 3800},
-  {label: 'Agbowo/UI/Orogun', fee: 1000},
-  {label: 'Jericho/Aleshinloye', fee: 3000},
-  {label: 'Eleyele', fee: 2500},
-  {label: 'Ologuneru', fee: 3000},
+  { label: 'Oluyole/Ringroad', fee: 3500 },
+  { label: 'Sango/Ashi', fee: 2000 },
+  { label: 'Bodija/Oshuntokun/Awolowo', fee: 2500 },
+  { label: 'Akobo (₦2,500)', fee: 2500 },
+  { label: 'Akobo (₦3,000)', fee: 3000 },
+  { label: 'Akobo Ojuirin', fee: 3200 },
+  { label: 'Ojoo', fee: 2000 },
+  { label: 'Elebu/Challenge', fee: 3800 },
+  { label: 'Agbowo/UI/Orogun', fee: 1000 },
+  { label: 'Jericho/Aleshinloye', fee: 3000 },
+  { label: 'Eleyele', fee: 2500 },
+  { label: 'Ologuneru', fee: 3000 },
 ];
 
 type PaystackSuccessResponse = {
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
   const [activeStep, setActiveStep] = useState(1);
   const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(true);
 
-  const {cart, totalPrice, updateQuantity, removeItem, clearCart} = useCart();
+  const { cart, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -102,8 +102,8 @@ export default function CheckoutPage() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const {name, value} = e.target;
-    setFormData(prev => ({...prev, [name]: value}));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleDeliverySelect = (method: 'pickup' | 'home') => {
@@ -115,7 +115,7 @@ export default function CheckoutPage() {
     try {
       const res = await fetch('/api/paystack/verify', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cart,
           formData,
@@ -159,7 +159,7 @@ export default function CheckoutPage() {
   }, [deliveryMethod, activeStep]);
 
   // Order Summary Component (reused for both mobile and desktop)
-  const OrderSummary = ({isMobile = false}) => (
+  const OrderSummary = ({ isMobile = false }) => (
     <div
       className={`bg-white rounded-2xl shadow-lg border border-[#dfe6db] overflow-hidden ${isMobile ? 'w-full' : ''}`}
     >
@@ -189,7 +189,7 @@ export default function CheckoutPage() {
 
       {(isMobile ? isOrderSummaryOpen : true) && (
         <>
-          <div className="p-4 max-h-[300px] overflow-y-auto">
+          <div className="p-4 max-h-75 overflow-y-auto">
             {cart.map(item => (
               <div
                 key={item.id}
@@ -197,7 +197,7 @@ export default function CheckoutPage() {
               >
                 <div
                   className="w-14 h-14 rounded-lg bg-cover bg-center shrink-0 border border-[#f2f4f0]"
-                  style={{backgroundImage: `url("${item.image}")`}}
+                  style={{ backgroundImage: `url("${item.image}")` }}
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-sm truncate">{item.name}</h4>
@@ -215,7 +215,7 @@ export default function CheckoutPage() {
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-xs font-medium min-w-[20px] text-center">
+                      <span className="text-xs font-medium min-w-5 text-center">
                         {item.quantity}
                       </span>
                       <button
@@ -330,15 +330,15 @@ export default function CheckoutPage() {
                 <div className="absolute top-4 left-[10%] right-[10%] h-0.5 bg-[#dfe6db] z-0">
                   <div
                     className="h-full bg-[#6f8961] transition-all duration-500"
-                    style={{width: `${((activeStep - 1) / 2) * 100}%`}}
+                    style={{ width: `${((activeStep - 1) / 2) * 100}%` }}
                   />
                 </div>
 
                 {[
-                  {step: 1, icon: User, label: 'Details'},
-                  {step: 2, icon: Truck, label: 'Delivery'},
-                  {step: 3, icon: CreditCard, label: 'Payment'},
-                ].map(({step, icon: Icon, label}) => {
+                  { step: 1, icon: User, label: 'Details' },
+                  { step: 2, icon: Truck, label: 'Delivery' },
+                  { step: 3, icon: CreditCard, label: 'Payment' },
+                ].map(({ step, icon: Icon, label }) => {
                   const status = getStepStatus(step);
                   return (
                     <div
@@ -348,13 +348,12 @@ export default function CheckoutPage() {
                       <div
                         className={`
                         w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 transition-all text-xs md:text-base
-                        ${
-                          status === 'completed'
+                        ${status === 'completed'
                             ? 'bg-[#6f8961] border-[#6f8961] text-white'
                             : status === 'active'
                               ? 'bg-white border-[#6f8961] text-[#6f8961] shadow-lg'
                               : 'bg-white border-[#dfe6db] text-[#6f8961]'
-                        }
+                          }
                       `}
                       >
                         {status === 'completed' ? (
@@ -510,10 +509,9 @@ export default function CheckoutPage() {
                   onClick={() => handleDeliverySelect('home')}
                   className={`
                     w-full text-left rounded-2xl border-2 p-4 md:p-5 transition-all
-                    ${
-                      deliveryMethod === 'home'
-                        ? 'border-[#6f8961] bg-[#6f8961]/5 shadow-md'
-                        : 'border-[#dfe6db] hover:border-[#6f8961]/30'
+                    ${deliveryMethod === 'home'
+                      ? 'border-[#6f8961] bg-[#6f8961]/5 shadow-md'
+                      : 'border-[#dfe6db] hover:border-[#6f8961]/30'
                     }
                   `}
                 >
@@ -573,10 +571,9 @@ export default function CheckoutPage() {
                   onClick={() => handleDeliverySelect('pickup')}
                   className={`
                     w-full text-left rounded-2xl border-2 p-4 md:p-5 transition-all
-                    ${
-                      deliveryMethod === 'pickup'
-                        ? 'border-[#6f8961] bg-[#6f8961]/5 shadow-md'
-                        : 'border-[#dfe6db] hover:border-[#6f8961]/30'
+                    ${deliveryMethod === 'pickup'
+                      ? 'border-[#6f8961] bg-[#6f8961]/5 shadow-md'
+                      : 'border-[#dfe6db] hover:border-[#6f8961]/30'
                     }
                   `}
                 >
@@ -671,7 +668,7 @@ export default function CheckoutPage() {
                           display_name: 'Customer Name',
                           value: `${formData.firstName} ${formData.lastName}`,
                         },
-                        {display_name: 'Phone', value: formData.phone},
+                        { display_name: 'Phone', value: formData.phone },
                       ],
                     }}
                     onSuccess={handlePaymentSuccess}

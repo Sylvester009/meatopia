@@ -1,10 +1,9 @@
-// app/api/events/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // Note: params is now a Promise
+  { params }: { params: Promise<{ id: string }> } 
 ) {
   try {
     // Await the params
@@ -12,7 +11,6 @@ export async function DELETE(
     
     console.log('Deleting event with ID:', id);
 
-    // Validate ID
     if (!id) {
       return NextResponse.json(
         { success: false, error: 'Event ID is required' },
