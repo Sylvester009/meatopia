@@ -1,4 +1,3 @@
-// app/admin/dashboard/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
@@ -603,6 +602,11 @@ export default function AdminDashboard() {
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Price
                   </th>
+                  
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Discount
+                  </th>
+                  
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Weight Options
                   </th>
@@ -650,10 +654,25 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 text-right font-semibold text-gray-900">
                       ₦{product.price.toLocaleString()}
                     </td>
+                    
+                    <td className="px-6 py-4 text-right">
+                      {product.discount ? (
+                        <span className="text-green-600 font-semibold">
+                          {product.discount}% OFF
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    
                     <td className="px-6 py-4 text-center">
-                      <span className="text-sm text-gray-600">
-                        {product.weightOptions?.length || 0} variants
-                      </span>
+                      {(product.weightOptions?.length ?? 0) > 0 ? (
+                        <span className="text-sm text-gray-600">
+                          {(product.weightOptions?.length ?? 0)} variants
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">

@@ -16,6 +16,7 @@ export interface Product {
     rating?: number;
     reviewsCount: number;
     weightUnit?: string;
+    discount?: number | null;
     tags?: Tag[];
     cookingTips?: CookingTip[];
     nutritionalInfo?: NutritionalInfo[];
@@ -107,10 +108,56 @@ export const productService = {
                 return [];
             }
 
-            return data || [];
+            const normalizedData = data?.map((product: any) => ({
+                ...product,
+                discount: product.discount !== undefined ? product.discount : null,
+                weightOptions: product.weight_options || [],
+                cookingTips: product.cooking_tips || [],
+                nutritionalInfo: product.nutritional_info || [],
+                tags: product.tags || [],
+                images: product.product_images || [],
+            })) || [];
+
+            return normalizedData;
         } catch (error) {
             console.error('Error fetching products:', error);
             return [];
+        }
+    },
+
+    async getProductFromSupabase(id: string): Promise<Product | null> {
+        try {
+            const { data, error } = await supabase
+                .from('products')
+                .select(`
+                    *,
+                    tags (*),
+                    cooking_tips (*),
+                    nutritional_info (*),
+                    weight_options (*),
+                    product_images (*)
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) {
+                console.error('Error fetching product from Supabase:', error);
+                return null;
+            }
+
+            // Normalize the data
+            return {
+                ...data,
+                discount: data.discount !== undefined ? data.discount : null,
+                weightOptions: data.weight_options || [],
+                cookingTips: data.cooking_tips || [],
+                nutritionalInfo: data.nutritional_info || [],
+                tags: data.tags || [],
+                images: data.product_images || [],
+            };
+        } catch (error) {
+            console.error('Error in getProductFromSupabase:', error);
+            return null;
         }
     },
 
@@ -169,6 +216,7 @@ export const productService = {
                     rating: productData.rating || null,
                     reviewsCount: productData.reviewsCount || 0,
                     weightUnit: productData.weightUnit || null,
+                    discount: productData.discount || null,
                 })
                 .select()
                 .single();
@@ -247,8 +295,7 @@ export const productService = {
                 }
             }
 
-            // Step 6: Fetch the complete product with relations
-            const completeProduct = await productService.getProduct(product.id);
+            const completeProduct = await productService.getProductFromSupabase(product.id);
             return completeProduct;
         } catch (error) {
             console.error('Error in createProduct:', error);
@@ -271,6 +318,7 @@ export const productService = {
                 rating: productData.rating || null,
                 reviewsCount: productData.reviewsCount || 0,
                 weightUnit: productData.weightUnit || null,
+                discount: productData.discount || null,
                 updated_at: new Date().toISOString(),
             };
 
@@ -380,8 +428,7 @@ export const productService = {
                 }
             }
 
-            // Step 7: Fetch the complete product with relations
-            const completeProduct = await productService.getProduct(id);
+            const completeProduct = await productService.getProductFromSupabase(id);
             return completeProduct;
         } catch (error) {
             console.error('Error in updateProduct:', error);

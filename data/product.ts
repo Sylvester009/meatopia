@@ -8,8 +8,9 @@ export interface Product {
   image: string;
   tag?: string;
   tagColor?: string;
-  rating?: number; // 1-5
+  rating?: number;
   reviewsCount: number;
+  discount?: number | null;
   tags?: {
     icon?: string;
     label?: string;
@@ -22,7 +23,12 @@ export interface Product {
   weightUnit?: string;
   images?: string[]; // for product gallery
   relatedProducts?: number[];
-  weightOptions?: any[]; // for "you might also like"
+  weightOptions?: Array<{
+    id?: number;
+    label: string;
+    multiplier: number;
+    image?: string;
+  }>;
 }
 
 export const categories = [

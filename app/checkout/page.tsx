@@ -66,7 +66,7 @@ export default function CheckoutPage() {
   const [activeStep, setActiveStep] = useState(1);
   const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(true);
 
-  const { cart, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
+  const { cart, totalPrice, totalOriginalPrice, totalSavings, updateQuantity, removeItem, clearCart } = useCart();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -204,6 +204,11 @@ export default function CheckoutPage() {
                   <p className="text-xs text-[#6f8961]">
                     Weight: {item.weight}
                   </p>
+                  {item.discount && item.discount > 0 && (
+                    <p className="text-xs text-red-500 font-medium">
+                      -{item.discount}% off
+                    </p>
+                  )}
                   <div className="flex items-center justify-between mt-1.5">
                     <div className="flex items-center gap-1 bg-[#f2f4f0] rounded-lg">
                       <button
@@ -227,9 +232,16 @@ export default function CheckoutPage() {
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
-                    <span className="font-bold text-sm">
-                      ₦{(item.unitPrice * item.quantity).toLocaleString()}
-                    </span>
+                    <div className="text-right">
+                      {item.originalPrice && item.originalPrice > item.unitPrice && (
+                        <span className="text-xs text-gray-400 line-through block">
+                          ₦{item.originalPrice.toLocaleString()}
+                        </span>
+                      )}
+                      <span className="font-bold text-sm">
+                        ₦{(item.unitPrice * item.quantity).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -251,6 +263,14 @@ export default function CheckoutPage() {
                   ₦{subtotal.toLocaleString()}
                 </span>
               </div>
+              {totalSavings > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>You Save</span>
+                  <span className="font-medium">
+                    -₦{totalSavings.toLocaleString()}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-[#6f8961]">Delivery Fee</span>
                 <span className="font-medium">
@@ -649,6 +669,16 @@ export default function CheckoutPage() {
                         ₦{total.toLocaleString()}
                       </span>
                     </div>
+                    {totalSavings > 0 && (
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-green-600">
+                          You're saving
+                        </span>
+                        <span className="text-sm font-bold text-green-600">
+                          ₦{totalSavings.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-[#6f8961]">
                       <Shield className="w-4 h-4" />
                       <span>

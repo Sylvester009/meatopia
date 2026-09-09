@@ -19,6 +19,7 @@ model Product {
   rating       Float?
   reviewsCount Int     @default(0)
   weightUnit   String?
+  discount     Float?
 
   // Related models
   tags            Tag[]
