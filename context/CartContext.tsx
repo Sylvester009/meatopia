@@ -9,6 +9,8 @@ export type CartItem = {
   unitPrice: number;
   quantity: number;
   weight: string;
+  originalPrice?: number;
+  discount?: number;
 };
 
 type CartContextType = {
@@ -19,6 +21,8 @@ type CartContextType = {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  totalOriginalPrice: number;
+  totalSavings: number;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -79,6 +83,19 @@ export function CartProvider({children}: {children: React.ReactNode}) {
     [cart],
   );
 
+  const totalOriginalPrice = useMemo(
+    () => cart.reduce((sum, item) => {
+      const originalUnitPrice = item.originalPrice || item.unitPrice;
+      return sum + originalUnitPrice * item.quantity;
+    }, 0),
+    [cart],
+  );
+
+  const totalSavings = useMemo(
+    () => totalOriginalPrice - totalPrice,
+    [totalOriginalPrice, totalPrice],
+  );
+
   return (
     <CartContext.Provider
       value={{
@@ -89,6 +106,8 @@ export function CartProvider({children}: {children: React.ReactNode}) {
         clearCart,
         totalItems,
         totalPrice,
+        totalOriginalPrice,
+        totalSavings,
       }}
     >
       {children}

@@ -1,4 +1,3 @@
-// components/ProductCard.tsx
 'use client';
 
 import {Product} from '@/services/productService';
@@ -43,7 +42,7 @@ export default function ProductCard({product}: ProductCardProps) {
   };
 
   // Get weight options
-  const weightOptions = product.weight_options || [];
+  const weightOptions = product.weightOptions || product.weightOptions || [];
   const hasWeightOptions = weightOptions.length > 0;
 
   // Default to first weight option or create a default
@@ -51,20 +50,25 @@ export default function ProductCard({product}: ProductCardProps) {
     ? weightOptions[0]
     : {label: '1kg', multiplier: 1};
 
+  // CHANGE: Calculate discounted price
+  const discount = product.discount || 0;
+  const basePrice = product.price;
+  const discountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     const weight = selectedWeight || defaultWeight;
 
-    // Calculate the price based on selected weight
-    const unitPrice = product.price * weight.multiplier;
+    // CHANGE: Calculate the price based on selected weight and discount
+    const unitPrice = discountedPrice * weight.multiplier;
 
     const cartItem = {
       id: product.id,
       name: product.name,
       image: getImageUrl(product.image),
-      basePrice: product.price,
+      basePrice: discountedPrice,
       unitPrice: unitPrice,
       quantity: 1,
       weight: weight.label,
@@ -102,6 +106,13 @@ export default function ProductCard({product}: ProductCardProps) {
               >
                 {product.tag}
               </span>
+            </div>
+          )}
+
+          {/* CHANGE: Added Discount Badge */}
+          {discount > 0 && (
+            <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
+              -{discount}% OFF
             </div>
           )}
 
@@ -154,7 +165,7 @@ export default function ProductCard({product}: ProductCardProps) {
           {/* Weight Options - Click to Select */}
           {hasWeightOptions && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {weightOptions.slice(0, 4).map(option => {
+              {weightOptions.slice(0, 4).map((option: any) => {
                 const isSelected =
                   selectedWeight?.label === option.label ||
                   (!selectedWeight && option.label === defaultWeight.label);
@@ -185,13 +196,25 @@ export default function ProductCard({product}: ProductCardProps) {
           {/* Price and Add to Cart */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#eef2ee]">
             <div className="flex flex-col">
-              <span className="text-lg font-bold text-[#131811]">
-                ₦
-                {(
-                  (product.price *
-                    (selectedWeight?.multiplier || defaultWeight.multiplier))
-                ).toFixed(2)}
-              </span>
+              {/* CHANGE: Show discounted price with original price struck through */}
+              <div className="flex flex-col items-baseline gap-2">
+                <span className="text-lg font-bold text-[#131811]">
+                  ₦
+                  {(
+                    discountedPrice *
+                    (selectedWeight?.multiplier || defaultWeight.multiplier)
+                  ).toFixed(2)}
+                </span>
+                {discount > 0 && (
+                  <span className="text-xs text-gray-400 line-through">
+                    ₦
+                    {(
+                      basePrice *
+                      (selectedWeight?.multiplier || defaultWeight.multiplier)
+                    ).toFixed(2)}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] text-[#6f8961]">
                 per {selectedWeight?.label || defaultWeight.label}
               </span>

@@ -26,8 +26,9 @@ export default function EditProductModal({
     description: '',
     image: '',
     tag: '',
+    discount: '',
     reviewsCount: 0,
-    weightOptions: [{ label: '1kg', multiplier: 1, image: '' }],
+    weightOptions: [] as {label: string; multiplier: number; image: string}[],
     tags: [{ label: '', icon: '', color: 'primary' }],
     details: { cookingTips: [''], nutritionalInfo: [''] },
   });
@@ -41,7 +42,7 @@ export default function EditProductModal({
         label: opt.label || '',
         multiplier: opt.multiplier || 1,
         image: opt.image || '',
-      })) || [{ label: '1kg', multiplier: 1, image: '' }];
+      })) || [];
 
       setFormData({
         id: product.id || '',
@@ -51,6 +52,7 @@ export default function EditProductModal({
         description: product.description || '',
         image: product.image || '',
         tag: product.tag || '',
+        discount: product.discount?.toString() || '',
         reviewsCount: product.reviewsCount || 0,
         weightOptions: weightOptions,
         tags: product.tags || [{ label: '', icon: '', color: 'primary' }],
@@ -133,7 +135,9 @@ export default function EditProductModal({
       ...formData,
       id: product.id,
       price: parseFloat(formData.price) || 0,
+      discount: formData.discount ? parseFloat(formData.discount) : null,
       reviewsCount: Number(formData.reviewsCount) || 0,
+      weightOptions: formData.weightOptions.length > 0 ? formData.weightOptions : [],
     };
     onSave(updatedProduct);
   };
@@ -241,15 +245,18 @@ export default function EditProductModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tag
+                Discount (%)
               </label>
               <input
-                type="text"
-                value={formData.tag}
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={formData.discount}
                 onChange={e =>
-                  setFormData(prev => ({ ...prev, tag: e.target.value }))
+                  setFormData(prev => ({ ...prev, discount: e.target.value }))
                 }
-                placeholder="e.g. Popular, Premium"
+                placeholder="e.g. 10 for 10% off"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
             </div>
@@ -333,7 +340,7 @@ export default function EditProductModal({
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-gray-700">
-                Weight Options
+                Weight Options <span className="text-xs text-gray-400">(Optional)</span>
               </label>
               <button
                 type="button"
@@ -343,6 +350,11 @@ export default function EditProductModal({
                 <Plus className="w-4 h-4" /> Add
               </button>
             </div>
+            {formData.weightOptions.length === 0 && (
+              <p className="text-sm text-gray-400 italic mb-3">
+                No weight options added. Product will be sold at base price.
+              </p>
+            )}
             <div className="space-y-3">
               {formData.weightOptions.map((option, index) => (
                 <div key={index} className="flex items-center gap-3">

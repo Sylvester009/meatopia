@@ -23,7 +23,7 @@ interface ProductDetailsProps {
 export default function ProductDetails({product}: ProductDetailsProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedWeight, setSelectedWeight] = useState(
-    product.weight_options?.[0] || null,
+    product.weightOptions?.[0] || null,
   );
   const [expandedSections, setExpandedSections] = useState({
     description: true,
@@ -32,11 +32,15 @@ export default function ProductDetails({product}: ProductDetailsProps) {
 
   const {addToCart} = useCart();
 
-  // Calculate prices
+  // CHANGE: Calculate discounted price
+  const discount = product.discount || 0;
   const basePrice = product.price;
+  const discountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+  
+  // Calculate prices
   const unitPrice = selectedWeight
-    ? basePrice * selectedWeight.multiplier
-    : basePrice;
+    ? discountedPrice * selectedWeight.multiplier
+    : discountedPrice;
   const totalPrice = unitPrice * quantity;
 
   const formatPrice = (price: number) => {
@@ -44,16 +48,16 @@ export default function ProductDetails({product}: ProductDetailsProps) {
   };
 
   const handleAddToCart = () => {
-    if (!selectedWeight) return;
+    if (!selectedWeight && product.weightOptions && product.weightOptions.length > 0) return;
 
     addToCart({
-      id: `${product.id}-${selectedWeight.label}`,
+      id: `${product.id}-${selectedWeight?.label || 'default'}`,
       name: product.name,
       image: product.image,
-      basePrice: product.price,
+      basePrice: discountedPrice,
       unitPrice: unitPrice,
       quantity: quantity,
-      weight: selectedWeight.label,
+      weight: selectedWeight?.label || '1kg',
     });
   };
 
@@ -64,9 +68,9 @@ export default function ProductDetails({product}: ProductDetailsProps) {
     }));
   };
 
-  const hasCookingTips = product.cooking_tips && product.cooking_tips.length > 0;
+  const hasCookingTips = product.cookingTips && product.cookingTips.length > 0;
   const hasNutritionalInfo =
-    product.nutritional_info && product.nutritional_info.length > 0;
+    product.nutritionalInfo && product.nutritionalInfo.length > 0;
   const hasDetails = hasCookingTips || hasNutritionalInfo;
 
   return (
@@ -99,7 +103,6 @@ export default function ProductDetails({product}: ProductDetailsProps) {
         </div>
       </div>
 
-      {/* Price */}
       <div className="flex items-baseline gap-3">
         <span className="text-3xl font-bold text-gray-900">
           {formatPrice(unitPrice)}
@@ -107,21 +110,26 @@ export default function ProductDetails({product}: ProductDetailsProps) {
         <span className="text-sm text-gray-500 font-medium">
           / {selectedWeight?.label || 'kg'}
         </span>
-        {selectedWeight && selectedWeight.multiplier > 1 && (
-          <span className="text-sm text-gray-400 line-through">
-            {formatPrice(basePrice)} / kg
-          </span>
+        {discount > 0 && (
+          <>
+            <span className="text-sm text-gray-400 line-through">
+              {formatPrice(basePrice * (selectedWeight?.multiplier || 1))}
+            </span>
+            <span className="text-sm font-bold text-red-500 bg-red-50 px-2 py-1 rounded">
+              -{discount}% OFF
+            </span>
+          </>
         )}
       </div>
 
       {/* Weight Selection */}
-      {product.weight_options && product.weight_options.length > 0 && (
+      {product.weightOptions && product.weightOptions.length > 0 && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 mb-2">
             Select Weight
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {product.weight_options.map(weight => (
+            {product.weightOptions.map(weight => (
               <button
                 key={weight.id || weight.label}
                 onClick={() => setSelectedWeight(weight)}
@@ -181,7 +189,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
                     Cooking Tips
                   </h4>
                   <ul className="space-y-1.5">
-                    {product.cooking_tips!.map(tip => (
+                    {product.cookingTips!.map(tip => (
                       <li
                         key={tip.id}
                         className="text-sm text-gray-600 flex items-start gap-2"
@@ -199,7 +207,7 @@ export default function ProductDetails({product}: ProductDetailsProps) {
                     Nutritional Information
                   </h4>
                   <ul className="space-y-1.5">
-                    {product.nutritional_info!.map(info => (
+                    {product.nutritionalInfo!.map(info => (
                       <li
                         key={info.id}
                         className="text-sm text-gray-600 flex items-start gap-2"

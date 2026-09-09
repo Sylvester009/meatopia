@@ -32,10 +32,20 @@ export async function GET(
       );
     }
 
-    // Transform image URLs
+    // Transform image URLs and normalize data
     const transformedProduct = {
       ...product,
       image: getProductImageUrl(product.image),
+      // CHANGE: Ensure discount is included (will be null if not set)
+      discount: product.discount !== undefined ? product.discount : null,
+      // CHANGE: Normalize snake_case to camelCase for consistency
+      weightOptions: (product.weight_options || []).map((option: any) => ({
+        ...option,
+        image: option.image ? getProductImageUrl(option.image) : null,
+      })),
+      cookingTips: product.cooking_tips || [],
+      nutritionalInfo: product.nutritional_info || [],
+      images: product.product_images || [],
       product_images: (product.product_images || []).map((img: any) => ({
         ...img,
         url: getProductImageUrl(img.url),
