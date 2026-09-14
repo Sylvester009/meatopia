@@ -45,9 +45,9 @@ export default function FloatingActionButtons() {
   );
 
   return (
-    <div className="fixed bottom-8 right-8 z-50 hidden flex flex-col gap-4">
+    <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
       {/* Events Button */}
-      <Link href="/special-events" className="relative group">
+      <Link href="/special-events" className="relative group hidden">
         <div className="relative">
           <div className="bg-primary text-primary-foreground p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110">
             <Calendar className="w-6 h-6" />
