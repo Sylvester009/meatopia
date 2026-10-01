@@ -109,7 +109,6 @@ export default function ProductCard({product}: ProductCardProps) {
             </div>
           )}
 
-          {/* CHANGE: Added Discount Badge */}
           {discount > 0 && (
             <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">
               -{discount}% OFF
@@ -162,7 +161,7 @@ export default function ProductCard({product}: ProductCardProps) {
             {product.description}
           </p>
 
-          {/* Weight Options - Click to Select */}
+          {/* Weight Options */}
           {hasWeightOptions && (
             <div className="flex flex-wrap gap-1 mt-1">
               {weightOptions.slice(0, 4).map((option: any) => {
@@ -196,7 +195,6 @@ export default function ProductCard({product}: ProductCardProps) {
           {/* Price and Add to Cart */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#eef2ee]">
             <div className="flex flex-col">
-              {/* CHANGE: Show discounted price with original price struck through */}
               <div className="flex flex-col items-baseline gap-2">
                 <span className="text-lg font-bold text-[#131811]">
                   ₦

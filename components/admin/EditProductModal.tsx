@@ -12,6 +12,14 @@ interface EditProductModalProps {
   product: any;
 }
 
+const capitalizeWords = (value: string) => {
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, char => char.toUpperCase());
+};
+
 export default function EditProductModal({
   isOpen,
   onClose,
@@ -134,6 +142,7 @@ export default function EditProductModal({
     const updatedProduct = {
       ...formData,
       id: product.id,
+      category: capitalizeWords(formData.category),
       price: parseFloat(formData.price) || 0,
       discount: formData.discount ? parseFloat(formData.discount) : null,
       reviewsCount: Number(formData.reviewsCount) || 0,
@@ -209,22 +218,19 @@ export default function EditProductModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Category *
               </label>
-              <select
+              <input
+                type="text"
                 required
                 value={formData.category}
                 onChange={e =>
-                  setFormData(prev => ({ ...prev, category: e.target.value }))
+                  setFormData(prev => ({
+                    ...prev,
+                    category: e.target.value,
+                  }))
                 }
+                placeholder="e.g. Goat Meat"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-              >
-                <option value="">Select Category</option>
-                <option value="Beef">Beef</option>
-                <option value="Chicken">Chicken</option>
-                <option value="Goat Meat">Goat Meat</option>
-                <option value="Turkey">Turkey</option>
-                <option value="Rabbit">Rabbit</option>
-                <option value="Meat Sharing">Meat Sharing</option>
-              </select>
+              />
             </div>
           </div>
 

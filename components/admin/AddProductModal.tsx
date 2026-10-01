@@ -1,8 +1,8 @@
 'use client';
 
-import {useState, useRef} from 'react';
-import {X, Plus, Trash2, Upload, Image as ImageIcon} from 'lucide-react';
-import {supabase} from '@/lib/supabase';
+import { useState, useRef } from 'react';
+import { X, Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 
 interface AddProductModalProps {
@@ -10,6 +10,14 @@ interface AddProductModalProps {
   onClose: () => void;
   onAddProduct: (product: any) => void;
 }
+
+const capitalizeWords = (value: string) => {
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, char => char.toUpperCase());
+};
 
 export default function AddProductModal({
   isOpen,
@@ -26,14 +34,14 @@ export default function AddProductModal({
     tag: '',
     discount: '',
     reviewsCount: 0,
-    weightOptions: [] as {label: string; multiplier: number; image: string}[],
-    tags: [{label: '', icon: '', color: 'primary'}],
-    details: {cookingTips: [''], nutritionalInfo: ['']},
+    weightOptions: [] as { label: string; multiplier: number; image: string }[],
+    tags: [{ label: '', icon: '', color: 'primary' }],
+    details: { cookingTips: [''], nutritionalInfo: [''] },
   });
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const weightFileInputRefs = useRef<{[key: number]: HTMLInputElement | null}>(
+  const weightFileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>(
     {},
   );
 
@@ -53,7 +61,7 @@ export default function AddProductModal({
       const filePath = `products/${fileName}`;
 
       // Upload to Supabase Storage
-      const {data, error} = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('product-images')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -69,19 +77,19 @@ export default function AddProductModal({
 
       // Get public URL
       const {
-        data: {publicUrl},
+        data: { publicUrl },
       } = supabase.storage.from('product-images').getPublicUrl(filePath);
 
       setUploadProgress(100);
 
       // Update form data based on type
       if (type === 'main') {
-        setFormData(prev => ({...prev, image: publicUrl}));
+        setFormData(prev => ({ ...prev, image: publicUrl }));
       } else if (type === 'weight' && index !== undefined) {
         setFormData(prev => ({
           ...prev,
           weightOptions: prev.weightOptions.map((opt, i) =>
-            i === index ? {...opt, image: publicUrl} : opt,
+            i === index ? { ...opt, image: publicUrl } : opt,
           ),
         }));
       }
@@ -118,25 +126,31 @@ export default function AddProductModal({
     handleImageUpload(file, type, index);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newProduct = {
-      ...formData,
-      id: formData.id || `product-${Date.now()}`,
-      price: parseFloat(formData.price),
-      discount: formData.discount ? parseFloat(formData.discount) : null,
-      reviewsCount: Number(formData.reviewsCount),
-      weightOptions: formData.weightOptions.length > 0 ? formData.weightOptions : [],
-    };
-    onAddProduct(newProduct);
+ const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const newProduct = {
+    ...formData,
+    id: formData.id || `product-${Date.now()}`,
+    category: capitalizeWords(formData.category),
+    price: parseFloat(formData.price),
+    discount: formData.discount ? parseFloat(formData.discount) : null,
+    reviewsCount: Number(formData.reviewsCount),
+    weightOptions:
+      formData.weightOptions.length > 0
+        ? formData.weightOptions
+        : [],
   };
+
+  onAddProduct(newProduct);
+};
 
   const addWeightOption = () => {
     setFormData(prev => ({
       ...prev,
       weightOptions: [
         ...prev.weightOptions,
-        {label: '', multiplier: 1, image: ''},
+        { label: '', multiplier: 1, image: '' },
       ],
     }));
   };
@@ -156,7 +170,7 @@ export default function AddProductModal({
     setFormData(prev => ({
       ...prev,
       weightOptions: prev.weightOptions.map((opt, i) =>
-        i === index ? {...opt, [field]: value} : opt,
+        i === index ? { ...opt, [field]: value } : opt,
       ),
     }));
   };
@@ -186,7 +200,7 @@ export default function AddProductModal({
                 required
                 value={formData.name}
                 onChange={e =>
-                  setFormData(prev => ({...prev, name: e.target.value}))
+                  setFormData(prev => ({ ...prev, name: e.target.value }))
                 }
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
@@ -195,22 +209,19 @@ export default function AddProductModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Category *
               </label>
-              <select
+              <input
+                type="text"
                 required
                 value={formData.category}
                 onChange={e =>
-                  setFormData(prev => ({...prev, category: e.target.value}))
+                  setFormData(prev => ({
+                    ...prev,
+                    category: e.target.value,
+                  }))
                 }
+                placeholder="e.g. Goat Meat"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-              >
-                <option value="">Select Category</option>
-                <option value="Beef">Beef</option>
-                <option value="Chicken">Chicken</option>
-                <option value="Goat Meat">Goat Meat</option>
-                <option value="Turkey">Turkey</option>
-                <option value="Rabbit">Rabbit</option>
-                <option value="Meat Sharing">Meat Sharing</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -224,7 +235,7 @@ export default function AddProductModal({
                 required
                 value={formData.price}
                 onChange={e =>
-                  setFormData(prev => ({...prev, price: e.target.value}))
+                  setFormData(prev => ({ ...prev, price: e.target.value }))
                 }
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
               />
@@ -240,7 +251,7 @@ export default function AddProductModal({
                 step="0.1"
                 value={formData.discount}
                 onChange={e =>
-                  setFormData(prev => ({...prev, discount: e.target.value}))
+                  setFormData(prev => ({ ...prev, discount: e.target.value }))
                 }
                 placeholder="e.g. 10 for 10% off"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
@@ -257,7 +268,7 @@ export default function AddProductModal({
               rows={3}
               value={formData.description}
               onChange={e =>
-                setFormData(prev => ({...prev, description: e.target.value}))
+                setFormData(prev => ({ ...prev, description: e.target.value }))
               }
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none"
             />
@@ -274,7 +285,7 @@ export default function AddProductModal({
                   type="text"
                   value={formData.image}
                   onChange={e =>
-                    setFormData(prev => ({...prev, image: e.target.value}))
+                    setFormData(prev => ({ ...prev, image: e.target.value }))
                   }
                   placeholder="Image URL or upload below"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
@@ -304,7 +315,7 @@ export default function AddProductModal({
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{width: `${uploadProgress}%`}}
+                    style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">

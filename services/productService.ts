@@ -1,4 +1,3 @@
-// services/productService.ts
 import api from '@/lib/axios';
 import { supabase } from '@/lib/supabase';
 import { AxiosResponse } from 'axios';

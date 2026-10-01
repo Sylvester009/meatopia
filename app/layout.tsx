@@ -1,4 +1,3 @@
-// app/layout.tsx - Keep as server component
 import type {Metadata} from 'next';
 import {Work_Sans} from 'next/font/google';
 import './globals.css';

@@ -36,7 +36,8 @@ export default function Home() {
           'Chicken',
           'Turkey',
           'Rabbit',
-          'Meat Sharing',
+          'Cow Sharing',
+          'Goat Sharing'
         ]);
       }
     };

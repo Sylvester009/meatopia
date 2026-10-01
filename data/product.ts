@@ -38,7 +38,8 @@ export const categories = [
   "Chicken",
   "Turkey",
   "Rabbit",
-  "Meat Sharing"
+  "Cow Sharing",
+  "Goat Sharing"
 ];
 
 

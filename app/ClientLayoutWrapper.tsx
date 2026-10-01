@@ -6,6 +6,7 @@ import {SearchProvider} from '@/context/SearchContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingActionButtons from '@/components/FloatingActionButtons';
+import CowSharingPopup from '@/components/popup';
 
 export default function ClientLayoutWrapper({
   children,
@@ -26,6 +27,7 @@ export default function ClientLayoutWrapper({
         <main className="min-h-screen">
           {children}
           <FloatingActionButtons />
+          <CowSharingPopup />
         </main>
         <Footer />
       </SearchProvider>
