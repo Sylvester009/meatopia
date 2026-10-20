@@ -436,6 +436,12 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/admin/control-panel"
+              className="text-sm text-gray-600 hover:text-primary transition-colors"
+            >
+              Control Panel
+            </Link>
+            <Link
               href="/"
               className="text-sm text-gray-600 hover:text-primary transition-colors"
             >
@@ -602,11 +608,11 @@ export default function AdminDashboard() {
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Price
                   </th>
-                  
+
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Discount
                   </th>
-                  
+
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Weight Options
                   </th>
@@ -654,7 +660,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 text-right font-semibold text-gray-900">
                       ₦{product.price.toLocaleString()}
                     </td>
-                    
+
                     <td className="px-6 py-4 text-right">
                       {product.discount ? (
                         <span className="text-green-600 font-semibold">
@@ -664,11 +670,11 @@ export default function AdminDashboard() {
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    
+
                     <td className="px-6 py-4 text-center">
                       {(product.weightOptions?.length ?? 0) > 0 ? (
                         <span className="text-sm text-gray-600">
-                          {(product.weightOptions?.length ?? 0)} variants
+                          {product.weightOptions?.length ?? 0} variants
                         </span>
                       ) : (
                         <span className="text-xs text-gray-400">-</span>
