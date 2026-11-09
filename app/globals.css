@@ -62,3 +62,49 @@ body {
 .slide-in-from-bottom-2 {
   animation-name: slideInFromBottom;
 }
+
+html[data-large-text='true'] {
+  font-size: 112.5%;
+}
+
+html[data-high-contrast='true'] body {
+  color: #000;
+}
+
+html[data-high-contrast='true'] a,
+html[data-color-blind-friendly='true'] a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+html[data-focus-indicators='true'] :focus-visible,
+html[data-keyboard-navigation='true'] :focus-visible {
+  outline: 3px solid #14532d;
+  outline-offset: 3px;
+}
+
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.site-skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.75rem 1rem;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #162210;
+  font-weight: 700;
+}
+
+.site-skip-link:focus {
+  transform: translateY(0);
+}

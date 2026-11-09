@@ -96,30 +96,40 @@ model Events {
 }
 
 model Orders {
-  id              Int      @id @default(autoincrement())
-  firstName       String
-  lastName        String
-  phone           String
-  email           String
-  address         String
-  city            String
-  state           String
-  deliveryMethod  String
+  id               Int      @id @default(autoincrement())
+  firstName        String
+  lastName         String
+  phone            String
+  email            String
+  address          String
+  city             String
+  state            String
+  deliveryMethod   String
   deliveryLocation String
-  totalAmount     Float
-  status          String   @default("pending")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  items           OrderItem[]
+  totalAmount      Float
+  status           String   @default("pending")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  items OrderItem[]
 }
 
 model OrderItem {
-  id        Int     @id @default(autoincrement())
+  id        Int    @id @default(autoincrement())
   orderId   Int
   name      String
   weight    String
   quantity  Int
   unitPrice Float
-  order     Orders  @relation(fields: [orderId], references: [id])
+  order     Orders @relation(fields: [orderId], references: [id])
+}
+
+model SiteControlSettings {
+  id                    String   @id @default("global") @db.Text
+  seoSettings           Json     @default("{}") @map("seo_settings") @db.JsonB
+  accessibilitySettings Json     @default("{}") @map("accessibility_settings") @db.JsonB
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy             String?  @map("updated_by") @db.Uuid
+
+  @@map("site_control_settings")
 }

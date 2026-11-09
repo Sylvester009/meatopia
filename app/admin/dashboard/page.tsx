@@ -164,7 +164,10 @@ export default function AdminDashboard() {
       const {
         data: {session},
       } = await supabase.auth.getSession();
-      if (!session) {
+      const isAdmin =
+        session?.user.app_metadata?.role === 'admin' ||
+        session?.user.email?.toLowerCase() === 'meatopia.ng@gmail.com';
+      if (!session || !isAdmin) {
         router.push('/admin/login');
         return;
       }

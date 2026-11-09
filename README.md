@@ -130,15 +130,42 @@ npm install
 
 ### Configure Environment Variables
 
-Create a `.env.local` file:
+Create a `.env` file in the project root. The included `.env` contains demo placeholders; replace them with credentials for your own services before using payments, email, Supabase, or the database.
 
 ```env
+DATABASE_URL=
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SERVICE_KEY=
+
 PAYSTACK_SECRET_KEY=
-PAYSTACK_PUBLIC_KEY=
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
 
 EMAIL_USER=
 EMAIL_PASS=
+BUSINESS_EMAIL=
+
+NEXT_PUBLIC_WHATSAPP_NUMBER=
 ```
+
+### Set up Supabase control-panel storage
+
+The control-panel table is managed by Prisma in `prisma/migrations/20261109150000_create_site_control_settings/migration.sql` and represented in `prisma/schema.prisma`. From the project root, deploy pending migrations with:
+
+```bash
+npx prisma migrate deploy
+```
+
+Prisma 7 reads the database URL and schema path from `prisma.config.ts`, so do not pass `--schema` to `prisma db execute`. To run only this SQL file directly, use:
+
+```bash
+npx prisma db execute --file prisma/migrations/20261109150000_create_site_control_settings/migration.sql
+```
+
+`db execute` runs SQL but does not record it in Prisma migration history; use `migrate deploy` to manage migrations. The public SEO metadata, structured data, robots directives, Google Analytics ID, and storefront accessibility preferences are read from this row at runtime. Supabase grants public read access only to these site settings; writes remain restricted to admins. Admin roles must be stored in Supabase `app_metadata` (or use the existing `meatopia.ng@gmail.com` admin account); user-editable `user_metadata` is not trusted for admin access.
 
 ### Start Development Server
 

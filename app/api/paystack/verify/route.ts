@@ -14,11 +14,19 @@ export async function POST(req: Request) {
       )
     }
 
+    const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
+    if (!paystackSecretKey) {
+      return NextResponse.json(
+        { success: false, message: "Payment verification is not configured" },
+        { status: 500 }
+      )
+    }
+
     const verifyRes = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${paystackSecretKey}`,
         },
         signal: AbortSignal.timeout(5000),
       }
@@ -49,7 +57,6 @@ export async function POST(req: Request) {
     processEmails(cart, formData, total, deliveryMethod, deliveryLocation, reference).catch(console.error)
 
     return response
-
   } catch (error) {
     console.error("ORDER PROCESS ERROR:", error)
     return NextResponse.json(
@@ -63,7 +70,6 @@ async function processEmails(cart: CartItem[], formData: { firstName: any; lastN
   try {
     const transporter = getTransporter()
 
-    // Format cart items
     const itemsHTML = cart.map((item: CartItem) => `
       <tr>
         <td>${item.name}</td>
@@ -73,7 +79,6 @@ async function processEmails(cart: CartItem[], formData: { firstName: any; lastN
       </tr>
     `).join("")
 
-    // Send business email
     await transporter.sendMail({
       from: `"Meatopia Orders" <${process.env.EMAIL_USER}>`,
       to: process.env.BUSINESS_EMAIL,
@@ -110,7 +115,6 @@ async function processEmails(cart: CartItem[], formData: { firstName: any; lastN
       `,
     })
 
-    // Send customer email
     await transporter.sendMail({
       from: `"Meatopia" <${process.env.EMAIL_USER}>`,
       to: formData.email,

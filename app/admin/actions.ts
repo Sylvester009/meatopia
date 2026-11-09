@@ -2,12 +2,12 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 export async function adminLogin(formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const emailValue = formData.get('email');
+  const passwordValue = formData.get('password');
+  const email = typeof emailValue === 'string' ? emailValue.trim() : '';
+  const password = typeof passwordValue === 'string' ? passwordValue : '';
   const rememberMe = formData.get('rememberMe') === 'true';
 
   if (!email || !password) {
@@ -15,7 +15,7 @@ export async function adminLogin(formData: FormData) {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(rememberMe);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -29,33 +29,17 @@ export async function adminLogin(formData: FormData) {
 
     // Check if user is admin
     const user = data.user;
-    const isAdmin = user?.user_metadata?.role === 'admin' || 
-                    user?.email === 'meatopia.ng@gmail.com';
+    const isAdmin =
+      user?.app_metadata?.role === 'admin' ||
+      user?.email?.toLowerCase() === 'meatopia.ng@gmail.com';
 
     if (!isAdmin) {
-      await supabase.auth.signOut();
+      const {error: signOutError} = await supabase.auth.signOut();
+      if (signOutError) {
+        console.error('Unable to clear non-admin session:', signOutError);
+      }
       return { error: 'Access denied. Admin privileges required.' };
     }
-
-    // Set session cookies
-    const cookieStore = await cookies();
-    const maxAge = rememberMe ? 2592000 : 86400; // 30 days or 1 day
-
-    cookieStore.set('adminLoggedIn', 'true', {
-      path: '/',
-      maxAge,
-      sameSite: 'lax',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
-
-    cookieStore.set('adminEmail', user.email || '', {
-      path: '/',
-      maxAge,
-      sameSite: 'lax',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
 
     return { success: true };
   } catch (error) {
@@ -67,11 +51,8 @@ export async function adminLogin(formData: FormData) {
 export async function adminLogout() {
   try {
     const supabase = await createClient();
-    await supabase.auth.signOut();
-
-    const cookieStore = await cookies();
-    cookieStore.delete('adminLoggedIn');
-    cookieStore.delete('adminEmail');
+    const {error} = await supabase.auth.signOut();
+    if (error) throw error;
 
     return { success: true };
   } catch (error) {
@@ -87,8 +68,9 @@ export async function getAdminUser() {
     
     if (!user) return null;
 
-    const isAdmin = user?.user_metadata?.role === 'admin' || 
-                    user?.email === 'meatopia.ng@gmail.com';
+    const isAdmin =
+      user.app_metadata?.role === 'admin' ||
+      user.email?.toLowerCase() === 'meatopia.ng@gmail.com';
 
     if (!isAdmin) return null;
 
@@ -106,20 +88,17 @@ export async function getAdminUser() {
 
 export async function isAdminAuthenticated() {
   try {
-    const cookieStore = await cookies();
-    const adminLoggedIn = cookieStore.get('adminLoggedIn');
-    
-    if (!adminLoggedIn || adminLoggedIn.value !== 'true') {
-      return false;
-    }
-
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) return false;
+    const {
+      data: {user},
+      error,
+    } = await supabase.auth.getUser();
 
-    const isAdmin = user?.user_metadata?.role === 'admin' || 
-                    user?.email === 'meatopia.ng@gmail.com';
+    if (error || !user) return false;
+
+    const isAdmin =
+      user.app_metadata?.role === 'admin' ||
+      user.email?.toLowerCase() === 'meatopia.ng@gmail.com';
 
     return isAdmin;
   } catch (error) {

@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
       // Check if user is admin
       const user = data.user;
       const isAdmin =
-        user?.user_metadata?.role === 'admin' ||
+        user?.app_metadata?.role === 'admin' ||
         user?.email === 'meatopia.ng@gmail.com';
 
       if (!isAdmin) {

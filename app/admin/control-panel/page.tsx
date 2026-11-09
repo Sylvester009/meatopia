@@ -1,9 +1,19 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
+import {
+  DEFAULT_ACCESSIBILITY_SETTINGS,
+  DEFAULT_SEO_SETTINGS,
+  normalizeAccessibilitySettings,
+  normalizeSEOSettings,
+  type AccessibilitySettings,
+  type SEOSettings,
+} from '@/lib/siteControlSettings';
 import {
   Search,
   Globe,
@@ -28,36 +38,6 @@ import {
   FileText,
   Shield,
 } from 'lucide-react';
-
-// Types
-interface SEOSettings {
-  metaTitle: string;
-  metaDescription: string;
-  metaKeywords: string;
-  canonicalUrl: string;
-  ogTitle: string;
-  ogDescription: string;
-  ogImage: string;
-  twitterCard: 'summary' | 'summary_large_image';
-  robotsIndex: boolean;
-  robotsFollow: boolean;
-  sitemapUrl: string;
-  googleAnalyticsId: string;
-  structuredData: string;
-}
-
-interface AccessibilitySettings {
-  highContrast: boolean;
-  largeText: boolean;
-  reduceMotion: boolean;
-  screenReaderOptimized: boolean;
-  focusIndicators: boolean;
-  altTextRequired: boolean;
-  skipNavigation: boolean;
-  ariaLabels: boolean;
-  keyboardNavigation: boolean;
-  colorBlindFriendly: boolean;
-}
 
 interface AuditItem {
   id: string;
@@ -236,10 +216,13 @@ const buildAuditItems = (
 
 export default function SEOAccessibilityPanel() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authorized, setAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState<'seo' | 'accessibility' | 'audit'>('seo');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [auditing, setAuditing] = useState(false);
   const [lastAuditAt, setLastAuditAt] = useState<string | null>(null);
   const [contrastForeground, setContrastForeground] = useState('#162210');
@@ -252,36 +235,10 @@ export default function SEOAccessibilityPanel() {
   ]);
 
   // SEO Settings State
-  const [seoSettings, setSeoSettings] = useState<SEOSettings>({
-    metaTitle: 'Meatopia - Premium Meats & Seafood Delivery',
-    metaDescription:
-      'Order premium quality meats, seafood, and groceries online. Fresh delivery to your doorstep with Meatopia.',
-    metaKeywords: 'premium meat, seafood delivery, online butcher, fresh groceries',
-    canonicalUrl: 'https://meatopia.com',
-    ogTitle: 'Meatopia - Premium Meats & Seafood Delivery',
-    ogDescription: 'Order premium quality meats, seafood, and groceries online.',
-    ogImage: 'https://res.cloudinary.com/dvvnb3ig1/image/upload/v1770144656/ut6qrgi4jlsndsflxddf.jpg',
-    twitterCard: 'summary_large_image',
-    robotsIndex: true,
-    robotsFollow: true,
-    sitemapUrl: 'https://meatopia.com/sitemap.xml',
-    googleAnalyticsId: 'G-XXXXXXXXXX',
-    structuredData: '{\n  "@context": "https://schema.org",\n  "@type": "Store",\n  "name": "Meatopia"\n}',
-  });
+  const [seoSettings, setSeoSettings] = useState<SEOSettings>(DEFAULT_SEO_SETTINGS);
 
-  // Accessibility Settings State
-  const [accessibilitySettings, setAccessibilitySettings] = useState<AccessibilitySettings>({
-    highContrast: false,
-    largeText: false,
-    reduceMotion: false,
-    screenReaderOptimized: false,
-    focusIndicators: true,
-    altTextRequired: true,
-    skipNavigation: true,
-    ariaLabels: true,
-    keyboardNavigation: true,
-    colorBlindFriendly: false,
-  });
+  const [accessibilitySettings, setAccessibilitySettings] =
+    useState<AccessibilitySettings>(DEFAULT_ACCESSIBILITY_SETTINGS);
 
   const auditItems = useMemo(
     () => buildAuditItems(seoSettings, accessibilitySettings),
@@ -289,37 +246,109 @@ export default function SEOAccessibilityPanel() {
   );
   const contrastRatio = getContrastRatio(contrastForeground, contrastBackground);
 
-  useEffect(() => {
-    checkAuth();
-    setLoading(false);
-  }, []);
-
-  const checkAuth = async () => {
+  const loadSettings = useCallback(async () => {
     try {
-      // Replace with actual auth check
-      setUser({ email: 'admin@meatopia.com' });
-    } catch (error) {
-      router.push('/admin/login');
-    }
-  };
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
+      if (sessionError) throw sessionError;
+
+      const authenticatedUser = session?.user;
+      const isAdmin =
+        authenticatedUser?.app_metadata?.role === 'admin' ||
+        authenticatedUser?.email?.toLowerCase() === 'meatopia.ng@gmail.com';
+
+      if (!authenticatedUser || !isAdmin) {
+        router.replace('/admin/login');
+        return;
+      }
+
+      setUser(authenticatedUser);
+      setAuthorized(true);
+
+      const { data, error } = await supabase
+        .from('site_control_settings')
+        .select('seo_settings, accessibility_settings')
+        .eq('id', 'global')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setSeoSettings(normalizeSEOSettings(data.seo_settings));
+        setAccessibilitySettings(
+          normalizeAccessibilitySettings(data.accessibility_settings)
+        );
+      }
+    } catch (error) {
+      console.error('Settings load error:', error);
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load settings from Supabase.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
   const handleLogout = async () => {
     try {
-      router.push('/admin/login');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      localStorage.removeItem('adminLoggedIn');
+      localStorage.removeItem('adminUser');
+      document.cookie =
+        'adminLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie =
+        'adminEmail=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      router.replace('/admin/login');
+      router.refresh();
     } catch (error) {
       console.error('Logout error:', error);
+      setSaveError(
+        error instanceof Error ? error.message : 'Unable to log out.'
+      );
     }
   };
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!user) {
+        router.replace('/admin/login');
+        return;
+      }
+
+      const { error } = await supabase.from('site_control_settings').upsert(
+        {
+          id: 'global',
+          seo_settings: seoSettings,
+          accessibility_settings: accessibilitySettings,
+          updated_by: user.id,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+
+      if (error) throw error;
+
+      setLoadError(null);
       setShowSaveToast(true);
       setTimeout(() => setShowSaveToast(false), 3000);
     } catch (error) {
       console.error('Save error:', error);
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save settings to Supabase.'
+      );
     } finally {
       setSaving(false);
     }
@@ -403,6 +432,25 @@ export default function SEOAccessibilityPanel() {
     );
   }
 
+  if (!authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="max-w-md rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <AlertCircle className="mx-auto h-8 w-8 text-red-600" />
+          <p className="mt-3 text-sm text-gray-700">
+            {loadError || 'Redirecting to admin sign in…'}
+          </p>
+          <Link
+            href="/admin/login"
+            className="mt-4 inline-block text-sm font-semibold text-primary hover:underline"
+          >
+            Go to admin sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Save Toast */}
@@ -464,6 +512,26 @@ export default function SEOAccessibilityPanel() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {(loadError || saveError) && (
+          <div
+            role="alert"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">
+                {loadError ? 'Could not load control panel settings' : 'Could not save settings'}
+              </p>
+              <p>{loadError || saveError}</p>
+              {(loadError || saveError)?.includes('site_control_settings') && (
+                <p className="mt-1">
+                  Apply the migration in `supabase/migrations` to your Supabase project.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Page Title & Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
