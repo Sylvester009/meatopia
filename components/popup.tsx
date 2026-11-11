@@ -86,7 +86,7 @@ export default function CowSharingPopup() {
           </p>
 
           <p className="mt-2 text-sm font-medium text-[#131811]">
-            Leave your email and we'll notify you when the next one opens.
+            Leave your email and we&apos;ll notify you when the next one opens.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">

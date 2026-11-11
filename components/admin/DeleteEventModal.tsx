@@ -6,7 +6,12 @@ interface DeleteEventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  event: any;
+  event: {
+    title: string;
+    description: string;
+    date?: string;
+    status?: string;
+  } | null;
 }
 
 export default function DeleteEventModal({
@@ -36,7 +41,9 @@ export default function DeleteEventModal({
           <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Event</h3>
           <p className="text-gray-600 mb-6">
             Are you sure you want to delete{' '}
-            <span className="font-semibold text-gray-900">"{event.title}"</span>
+            <span className="font-semibold text-gray-900">
+              &quot;{event.title}&quot;
+            </span>
             ? This action cannot be undone.
           </p>
 

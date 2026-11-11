@@ -2,9 +2,28 @@ import { NextResponse } from "next/server"
 import { CartItem } from "@/context/CartContext"
 import { getTransporter } from "@/lib/mailer"
 
+type CheckoutFormData = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+};
+
+type EmailOrder = {
+  reference: string;
+  cart: CartItem[];
+  formData: CheckoutFormData;
+  total: number;
+  deliveryMethod: string;
+  deliveryLocation: string;
+};
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
+    const body: EmailOrder = await req.json()
     const { reference, cart, formData, total, deliveryMethod, deliveryLocation } = body
 
     if (!reference) {
@@ -49,14 +68,20 @@ export async function POST(req: Request) {
       })
     }
 
-    const response = NextResponse.json({
+    const emailDelivery = await processEmails(
+      cart,
+      formData,
+      total,
+      deliveryMethod,
+      deliveryLocation,
+      reference,
+    );
+
+    return NextResponse.json({
       success: true,
       message: "Payment verified and order processed",
-    })
-
-    processEmails(cart, formData, total, deliveryMethod, deliveryLocation, reference).catch(console.error)
-
-    return response
+      emailDelivery,
+    });
   } catch (error) {
     console.error("ORDER PROCESS ERROR:", error)
     return NextResponse.json(
@@ -66,36 +91,83 @@ export async function POST(req: Request) {
   }
 }
 
-async function processEmails(cart: CartItem[], formData: { firstName: any; lastName: any; phone: any; email: any; address: any; city: any; state: any }, total: { toLocaleString: () => any }, deliveryMethod: any, deliveryLocation: any, reference: any) {
-  try {
-    const transporter = getTransporter()
+async function processEmails(
+  cart: CartItem[],
+  formData: CheckoutFormData,
+  total: number,
+  deliveryMethod: string,
+  deliveryLocation: string,
+  reference: string,
+): Promise<{business: boolean; customer: boolean}> {
+  const businessEmail = process.env.BUSINESS_EMAIL;
+  const emailUser = process.env.EMAIL_USER;
 
-    const itemsHTML = cart.map((item: CartItem) => `
+  if (!businessEmail || !emailUser) {
+    console.error(
+      'Order email delivery is not configured: BUSINESS_EMAIL and EMAIL_USER are required',
+    );
+    return {business: false, customer: false};
+  }
+
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, character => {
+      const entities: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      };
+      return entities[character];
+    });
+
+  const itemsHTML = cart.map(item => `
       <tr>
-        <td>${item.name}</td>
-        <td>${item.weight}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${escapeHtml(item.weight)}</td>
         <td>${item.quantity}</td>
         <td>₦${(item.unitPrice * item.quantity).toLocaleString()}</td>
       </tr>
     `).join("")
 
-    await transporter.sendMail({
-      from: `"Meatopia Orders" <${process.env.EMAIL_USER}>`,
-      to: process.env.BUSINESS_EMAIL,
-      subject: `🛒 New Order from ${formData.firstName}`,
+  const customerName = `${formData.firstName} ${formData.lastName}`;
+  const escapedCustomerFields = {
+    name: escapeHtml(customerName),
+    phone: escapeHtml(formData.phone),
+    email: escapeHtml(formData.email),
+    address: escapeHtml(
+      `${formData.address}, ${formData.city}, ${formData.state}`,
+    ),
+    deliveryMethod: escapeHtml(deliveryMethod),
+    deliveryLocation: escapeHtml(deliveryLocation),
+    reference: escapeHtml(reference),
+  };
+  let transporter: ReturnType<typeof getTransporter>;
+  try {
+    transporter = getTransporter();
+  } catch (error) {
+    console.error('Unable to configure order email delivery:', error);
+    return {business: false, customer: false};
+  }
+
+  const results = await Promise.allSettled([
+    transporter.sendMail({
+      from: `"Meatopia Orders" <${emailUser}>`,
+      to: businessEmail,
+      subject: `🛒 New Order from ${customerName}`,
       html: `
         <h2>New Customer Order</h2>
 
         <h3>Customer Info</h3>
         <p>
-          Name: ${formData.firstName} ${formData.lastName}<br/>
-          Phone: ${formData.phone}<br/>
-          Email: ${formData.email}<br/>
-          Address: ${formData.address}, ${formData.city}, ${formData.state}
+          Name: ${escapedCustomerFields.name}<br/>
+          Phone: ${escapedCustomerFields.phone}<br/>
+          Email: ${escapedCustomerFields.email}<br/>
+          Address: ${escapedCustomerFields.address}
         </p>
 
         <h3>Delivery</h3>
-        <p>${deliveryMethod} - ${deliveryLocation}</p>
+        <p>${escapedCustomerFields.deliveryMethod} - ${escapedCustomerFields.deliveryLocation}</p>
 
         <h3>Order Items</h3>
         <table border="1" cellpadding="8">
@@ -111,18 +183,17 @@ async function processEmails(cart: CartItem[], formData: { firstName: any; lastN
         <h3>Total Paid</h3>
         <strong>₦${total.toLocaleString()}</strong>
 
-        <p>Reference: ${reference}</p>
+        <p>Reference: ${escapedCustomerFields.reference}</p>
       `,
-    })
-
-    await transporter.sendMail({
-      from: `"Meatopia" <${process.env.EMAIL_USER}>`,
+    }),
+    transporter.sendMail({
+      from: `"Meatopia" <${emailUser}>`,
       to: formData.email,
       subject: "Your Order is Confirmed 🥩",
       html: `
         <h2>Thank you for your order!</h2>
 
-        <p>Hi ${formData.firstName},</p>
+        <p>Hi ${escapeHtml(formData.firstName)},</p>
 
         <p>Your payment was successful and we have received your order.</p>
 
@@ -139,18 +210,28 @@ async function processEmails(cart: CartItem[], formData: { firstName: any; lastN
 
         <h3>Total Paid: ₦${total.toLocaleString()}</h3>
 
-        <p>Delivery Method: ${deliveryMethod}</p>
+        <p>Delivery Method: ${escapedCustomerFields.deliveryMethod} - ${escapedCustomerFields.deliveryLocation}</p>
 
         <p>We will contact you soon for delivery updates.</p>
 
         <p>— Meatopia Team 🥩</p>
       `,
     })
-  } catch (error) {
-    console.error("Email sending error:", error)
-    return NextResponse.json(
-      { success: false, message: "Server error" },
-      { status: 500 }
-    )
-  }
+  ]);
+
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(
+        index === 0
+          ? 'Failed to send business order email:'
+          : 'Failed to send customer confirmation email:',
+        result.reason,
+      );
+    }
+  });
+
+  return {
+    business: results[0].status === 'fulfilled',
+    customer: results[1].status === 'fulfilled',
+  };
 }

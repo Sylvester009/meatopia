@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import {useState, useMemo, useEffect} from 'react';
+import {useState, useMemo, useEffect, useCallback} from 'react';
+import type {User} from '@supabase/supabase-js';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
@@ -10,12 +10,12 @@ import {
   getAllProducts,
   deleteProduct,
   Product,
+  ProductEditorInput,
   createProduct,
   updateProduct,
 } from '@/services/productService';
 import {
   Package,
-  ShoppingBag,
   Calendar,
   Plus,
   Search,
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
@@ -131,11 +131,6 @@ export default function AdminDashboard() {
   const itemsPerPage = 5;
 
   // Fetch products on mount
-  useEffect(() => {
-    fetchProducts();
-    checkAuth();
-  }, []);
-
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -159,7 +154,7 @@ export default function AdminDashboard() {
     fetchEvents();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const {
         data: {session},
@@ -176,9 +171,9 @@ export default function AdminDashboard() {
       console.error('Auth check error:', error);
       router.push('/admin/login');
     }
-  };
+  }, [router]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       // Use getAllProducts to get the array directly
@@ -194,7 +189,12 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchProducts();
+    void checkAuth();
+  }, [checkAuth, fetchProducts]);
 
   const handleLogout = async () => {
     try {
@@ -259,7 +259,7 @@ export default function AdminDashboard() {
   );
 
   // Handlers
-  const handleAddProduct = async (newProduct: any) => {
+  const handleAddProduct = async (newProduct: ProductEditorInput) => {
     try {
       setLoading(true);
 
@@ -283,7 +283,9 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEditProduct = async (updatedProduct: any) => {
+  const handleEditProduct = async (
+    updatedProduct: ProductEditorInput & {id: string},
+  ) => {
     try {
       setLoading(true);
 
@@ -343,8 +345,6 @@ export default function AdminDashboard() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete event');
       }
-
-      const result = await response.json();
 
       // Remove event from local state
       setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));

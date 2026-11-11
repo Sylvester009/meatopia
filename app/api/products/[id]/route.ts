@@ -1,14 +1,13 @@
 // app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductImageUrl } from '@/lib/imageUtils';
+import { normalizeProductApiRow, type ProductApiRow } from '@/lib/productApi';
 import { supabase } from '@/lib/supabase';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-
     const { id } = await params;
 
     const { data: product, error } = await supabase
@@ -33,28 +32,9 @@ export async function GET(
     }
 
     // Transform image URLs and normalize data
-    const transformedProduct = {
-      ...product,
-      image: getProductImageUrl(product.image),
-      // CHANGE: Ensure discount is included (will be null if not set)
-      discount: product.discount !== undefined ? product.discount : null,
-      // CHANGE: Normalize snake_case to camelCase for consistency
-      weightOptions: (product.weight_options || []).map((option: any) => ({
-        ...option,
-        image: option.image ? getProductImageUrl(option.image) : null,
-      })),
-      cookingTips: product.cooking_tips || [],
-      nutritionalInfo: product.nutritional_info || [],
-      images: product.product_images || [],
-      product_images: (product.product_images || []).map((img: any) => ({
-        ...img,
-        url: getProductImageUrl(img.url),
-      })),
-      weight_options: (product.weight_options || []).map((option: any) => ({
-        ...option,
-        image: option.image ? getProductImageUrl(option.image) : null,
-      })),
-    };
+    const transformedProduct = normalizeProductApiRow(
+      product as ProductApiRow,
+    );
 
     return NextResponse.json({ product: transformedProduct });
   } catch (error) {

@@ -50,7 +50,7 @@ export default function ProductCard({product}: ProductCardProps) {
     ? weightOptions[0]
     : {label: '1kg', multiplier: 1};
 
-  // CHANGE: Calculate discounted price
+  // Calculate discounted price
   const discount = product.discount || 0;
   const basePrice = product.price;
   const discountedPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
@@ -61,11 +61,11 @@ export default function ProductCard({product}: ProductCardProps) {
 
     const weight = selectedWeight || defaultWeight;
 
-    // CHANGE: Calculate the price based on selected weight and discount
+    // Calculate the price based on selected weight and discount
     const unitPrice = discountedPrice * weight.multiplier;
 
     const cartItem = {
-      id: product.id,
+      id: `${product.id}-${weight.label || 'default'}`,
       name: product.name,
       image: getImageUrl(product.image),
       basePrice: discountedPrice,
@@ -164,7 +164,7 @@ export default function ProductCard({product}: ProductCardProps) {
           {/* Weight Options */}
           {hasWeightOptions && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {weightOptions.slice(0, 4).map((option: any) => {
+              {weightOptions.slice(0, 4).map(option => {
                 const isSelected =
                   selectedWeight?.label === option.label ||
                   (!selectedWeight && option.label === defaultWeight.label);

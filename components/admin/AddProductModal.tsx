@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
+import type { ProductEditorInput } from '@/services/productService';
 
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProduct: (product: any) => void;
+  onAddProduct: (product: ProductEditorInput) => void;
 }
 
 const capitalizeWords = (value: string) => {
@@ -41,9 +42,6 @@ export default function AddProductModal({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const weightFileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>(
-    {},
-  );
 
   if (!isOpen) return null;
 
@@ -61,7 +59,7 @@ export default function AddProductModal({
       const filePath = `products/${fileName}`;
 
       // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('product-images')
         .upload(filePath, file, {
           cacheControl: '3600',

@@ -2,12 +2,13 @@
 
 import { X, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
+import type { Product } from '@/services/productService';
 
 interface DeleteProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  product: any;
+  product: Product | null;
 }
 
 export default function DeleteProductModal({
@@ -40,7 +41,7 @@ export default function DeleteProductModal({
           <p className="text-gray-600 mb-6">
             Are you sure you want to delete{' '}
             <span className="font-semibold text-gray-900">
-              "{product.name}"
+              &quot;{product.name}&quot;
             </span>
             ? This action cannot be undone.
           </p>

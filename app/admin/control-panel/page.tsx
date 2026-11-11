@@ -30,12 +30,8 @@ import {
   Image as ImageIcon,
   Link2,
   Code,
-  Smartphone,
   Monitor,
   LogOut,
-  TrendingUp,
-  Settings,
-  FileText,
   Shield,
 } from 'lucide-react';
 
@@ -881,13 +877,13 @@ export default function SEOAccessibilityPanel() {
                       </div>
                       {seoSettings.ogImage && (
                         <div className="mt-3 w-full max-w-xs h-32 bg-gray-100 rounded-xl overflow-hidden">
-                          <img
+                          <Image
                             src={seoSettings.ogImage}
                             alt="OG Preview"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
+                            fill
+                            unoptimized
+                            sizes="(max-width: 640px) 100vw, 320px"
+                            className="object-cover"
                           />
                         </div>
                       )}

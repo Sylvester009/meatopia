@@ -4,7 +4,6 @@ import {useState} from 'react';
 import {Product} from '@/services/productService';
 import {useCart} from '@/context/CartContext';
 import {
-  Star,
   Minus,
   Plus,
   ShoppingBag,

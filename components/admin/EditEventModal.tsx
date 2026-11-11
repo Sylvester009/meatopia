@@ -1,13 +1,57 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {X} from 'lucide-react';
+
+type EventRecord = {
+  id: string;
+  title: string;
+  description: string;
+  fullDescription: string;
+  image?: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  discount?: string;
+  status?: 'active' | 'upcoming' | 'ended';
+  isActive: boolean;
+};
 
 interface EditEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedEvent: any) => void;
-  event: any;
+  onSave: (updatedEvent: EventRecord) => void;
+  event: EventRecord | null;
+}
+
+type EventFormData = {
+  title: string;
+  description: string;
+  fullDescription: string;
+  date: string;
+  endDate: string;
+  location: string;
+  discount: string;
+  status: 'active' | 'upcoming' | 'ended';
+  image: string;
+};
+
+function getEventFormData(event: EventRecord | null): EventFormData {
+  return {
+    title: event?.title || '',
+    description: event?.description || '',
+    fullDescription: event?.fullDescription || event?.description || '',
+    date: event?.startDate
+      ? new Date(event.startDate).toISOString().split('T')[0]
+      : '',
+    endDate: event?.endDate
+      ? new Date(event.endDate).toISOString().split('T')[0]
+      : '',
+    location: event?.location || '',
+    discount: event?.discount || '',
+    status: event?.status || 'upcoming',
+    image: event?.image || '',
+  };
 }
 
 export default function EditEventModal({
@@ -16,37 +60,13 @@ export default function EditEventModal({
   onSave,
   event,
 }: EditEventModalProps) {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    fullDescription: '',
-    date: '',
-    endDate: '',
-    location: '',
-    discount: '',
-    status: 'upcoming' as 'active' | 'upcoming' | 'ended',
-    image: '',
-  });
+  const [formData, setFormData] = useState(() => getEventFormData(event));
+  const [previousProps, setPreviousProps] = useState({event, isOpen});
 
-  useEffect(() => {
-    if (event) {
-      setFormData({
-        title: event.title || '',
-        description: event.description || '',
-        fullDescription: event.fullDescription || event.description || '',
-        date: event.startDate
-          ? new Date(event.startDate).toISOString().split('T')[0]
-          : '',
-        endDate: event.endDate
-          ? new Date(event.endDate).toISOString().split('T')[0]
-          : '',
-        location: event.location || '',
-        discount: event.discount || '',
-        status: event.status || 'upcoming',
-        image: event.image || '',
-      });
-    }
-  }, [event]);
+  if (event !== previousProps.event || isOpen !== previousProps.isOpen) {
+    setPreviousProps({event, isOpen});
+    if (event && isOpen) setFormData(getEventFormData(event));
+  }
 
   if (!isOpen || !event) return null;
 
@@ -201,7 +221,10 @@ export default function EditEventModal({
             <select
               value={formData.status}
               onChange={e =>
-                setFormData(prev => ({...prev, status: e.target.value as any}))
+                setFormData(prev => ({
+                  ...prev,
+                  status: e.target.value as 'active' | 'upcoming' | 'ended',
+                }))
               }
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
             >

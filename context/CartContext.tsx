@@ -1,5 +1,10 @@
 'use client';
-import {createContext, useContext, useState, useMemo, useEffect} from 'react';
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+} from 'react';
 
 export type CartItem = {
   id: string;
@@ -27,51 +32,75 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null);
 
+const cartChangeEvent = 'cart-change';
+const getCartSnapshot = () =>
+  typeof window === 'undefined' ? '[]' : window.localStorage.getItem('cart') || '[]';
+const getServerCartSnapshot = () => '[]';
+
+function subscribeToCart(onChange: () => void) {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(cartChangeEvent, onChange);
+
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(cartChangeEvent, onChange);
+  };
+}
+
+function readCart(): CartItem[] {
+  return JSON.parse(getCartSnapshot()) as CartItem[];
+}
+
+function saveCart(cart: CartItem[]) {
+  window.localStorage.setItem('cart', JSON.stringify(cart));
+  window.dispatchEvent(new Event(cartChangeEvent));
+}
+
 export function CartProvider({children}: {children: React.ReactNode}) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('cart');
-    if (stored) setCart(JSON.parse(stored));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
+  const cartSnapshot = useSyncExternalStore(
+    subscribeToCart,
+    getCartSnapshot,
+    getServerCartSnapshot,
+  );
+  const cart = useMemo(
+    () => JSON.parse(cartSnapshot) as CartItem[],
+    [cartSnapshot],
+  );
 
   const addToCart = (item: CartItem) => {
-    setCart(prev => {
-      const existing = prev.find(cartItem => cartItem.id === item.id);
+    const previousCart = readCart();
+    const existing = previousCart.find(cartItem => cartItem.id === item.id);
 
-      if (existing) {
-        return prev.map(cartItem =>
+    if (existing) {
+      saveCart(
+        previousCart.map(cartItem =>
           cartItem.id === item.id
             ? {...cartItem, quantity: cartItem.quantity + item.quantity}
             : cartItem,
-        );
-      }
+        ),
+      );
+      return;
+    }
 
-      return [...prev, item];
-    });
+    saveCart([...previousCart, item]);
   };
 
   function updateQuantity(id: string, qty: number) {
-    setCart(prev => {
-      if (qty <= 0) {
-        return prev.filter(item => item.id !== id);
-      }
-
-      return prev.map(item =>
-        item.id === id ? {...item, quantity: qty} : item,
-      );
-    });
+    const previousCart = readCart();
+    saveCart(
+      qty <= 0
+        ? previousCart.filter(item => item.id !== id)
+        : previousCart.map(item =>
+            item.id === id ? {...item, quantity: qty} : item,
+          ),
+    );
   }
 
   function removeItem(id: string) {
-    setCart(prev => prev.filter(item => item.id !== id));
+    saveCart(readCart().filter(item => item.id !== id));
   }
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => saveCart([]);
 
   const totalItems = useMemo(
     () => cart.reduce((sum, item) => sum + item.quantity, 0),

@@ -6,7 +6,7 @@ import {Calendar, MessageCircle} from 'lucide-react';
 
 export default function FloatingActionButtons() {
   const [eventsCount, setEventsCount] = useState(0);
-  const [__isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchEventsCount = async () => {

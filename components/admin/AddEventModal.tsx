@@ -142,7 +142,7 @@ export default function AddEventModal({isOpen, onClose}: AddEventModalProps) {
       let imageUrl = '';
       try {
         imageUrl = await uploadImageToSupabase(imageFile);
-      } catch (uploadError) {
+      } catch {
         toast.error('Failed to upload image. Please try again.');
         setLoading(false);
         return;

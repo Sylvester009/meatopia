@@ -19,8 +19,6 @@ export function getProductImageUrl(imagePath: string): string {
 // Function to upload local images to Supabase during seeding
 export async function uploadLocalImageToSupabase(
   localPath: string,
-  productId: string,
-  isMain: boolean = true
 ): Promise<string> {
   // If it's already a URL, return it
   if (localPath.startsWith('http://') || localPath.startsWith('https://')) {

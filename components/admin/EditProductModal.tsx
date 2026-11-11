@@ -1,15 +1,69 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
+import type { Product, ProductEditorInput } from '@/services/productService';
+
+type EditableProduct = Product & {
+  details?: {
+    cookingTips: string[];
+    nutritionalInfo: string[];
+  };
+};
+
+type ProductFormData = {
+  id: string;
+  name: string;
+  category: string;
+  price: string;
+  description: string;
+  image: string;
+  tag: string;
+  discount: string;
+  reviewsCount: number;
+  weightOptions: {label: string; multiplier: number; image: string}[];
+  tags: {label: string; icon: string; color: string}[];
+  details: {cookingTips: string[]; nutritionalInfo: string[]};
+};
+
+function getProductFormData(product: EditableProduct | null): ProductFormData {
+  return {
+    id: product?.id || '',
+    name: product?.name || '',
+    category: product?.category || '',
+    price: product?.price?.toString() || '',
+    description: product?.description || '',
+    image: product?.image || '',
+    tag: product?.tag || '',
+    discount: product?.discount?.toString() || '',
+    reviewsCount: product?.reviewsCount || 0,
+    weightOptions:
+      product?.weightOptions?.map(option => ({
+        label: option.label || '',
+        multiplier: option.multiplier || 1,
+        image: option.image || '',
+      })) || [],
+    tags:
+      product?.tags?.map(tag => ({
+        label: tag.label,
+        icon: tag.icon || '',
+        color: tag.color || 'primary',
+      })) || [{label: '', icon: '', color: 'primary'}],
+    details: product?.details || {
+      cookingTips: product?.cookingTips?.map(tip => tip.tip) || [''],
+      nutritionalInfo:
+        product?.nutritionalInfo?.map(info => info.info) || [''],
+    },
+  };
+}
 
 interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedProduct: any) => void;
-  product: any;
+  onSave: (updatedProduct: ProductEditorInput & {id: string}) => void;
+  product: EditableProduct | null;
 }
 
 const capitalizeWords = (value: string) => {
@@ -26,48 +80,16 @@ export default function EditProductModal({
   onSave,
   product,
 }: EditProductModalProps) {
-  const [formData, setFormData] = useState({
-    id: '',
-    name: '',
-    category: '',
-    price: '',
-    description: '',
-    image: '',
-    tag: '',
-    discount: '',
-    reviewsCount: 0,
-    weightOptions: [] as {label: string; multiplier: number; image: string}[],
-    tags: [{ label: '', icon: '', color: 'primary' }],
-    details: { cookingTips: [''], nutritionalInfo: [''] },
-  });
+  const [formData, setFormData] = useState(() => getProductFormData(product));
+  const [previousProps, setPreviousProps] = useState({product, isOpen});
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (product) {
-      const weightOptions = product.weightOptions?.map((opt: any) => ({
-        label: opt.label || '',
-        multiplier: opt.multiplier || 1,
-        image: opt.image || '',
-      })) || [];
-
-      setFormData({
-        id: product.id || '',
-        name: product.name || '',
-        category: product.category || '',
-        price: product.price?.toString() || '',
-        description: product.description || '',
-        image: product.image || '',
-        tag: product.tag || '',
-        discount: product.discount?.toString() || '',
-        reviewsCount: product.reviewsCount || 0,
-        weightOptions: weightOptions,
-        tags: product.tags || [{ label: '', icon: '', color: 'primary' }],
-        details: product.details || { cookingTips: [''], nutritionalInfo: [''] },
-      });
-    }
-  }, [product]);
+  if (product !== previousProps.product || isOpen !== previousProps.isOpen) {
+    setPreviousProps({product, isOpen});
+    if (product && isOpen) setFormData(getProductFormData(product));
+  }
 
   if (!isOpen || !product) return null;
 
@@ -80,7 +102,7 @@ export default function EditProductModal({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `products/${fileName}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('product-images')
         .upload(filePath, file, {
           cacheControl: '3600',

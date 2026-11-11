@@ -52,6 +52,29 @@ export interface ProductImage {
     url: string;
 }
 
+export type ProductEditorInput = {
+    id?: string;
+    name: string;
+    category: string;
+    price: number;
+    description: string;
+    image: string;
+    tag?: string;
+    tagColor?: string;
+    rating?: number;
+    reviewsCount: number;
+    weightUnit?: string;
+    discount?: number | null;
+    tags?: Array<Pick<Tag, 'label'> & Partial<Pick<Tag, 'icon' | 'color'>>>;
+    weightOptions?: Array<Pick<WeightOption, 'label' | 'multiplier'> & {image?: string}>;
+    details?: {
+        cookingTips: string[];
+        nutritionalInfo: string[];
+    };
+    cookingTips?: string[];
+    nutritionalInfo?: string[];
+};
+
 export interface PaginatedResponse {
     products: Product[];
     pagination: {
@@ -107,7 +130,7 @@ export const productService = {
                 return [];
             }
 
-            const normalizedData = data?.map((product: any) => ({
+            const normalizedData = data?.map(product => ({
                 ...product,
                 discount: product.discount !== undefined ? product.discount : null,
                 weightOptions: product.weight_options || [],
@@ -196,7 +219,7 @@ export const productService = {
         return response.data.categories;
     },
 
-     async createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product | null> {
+     async createProduct(productData: ProductEditorInput): Promise<Product | null> {
         try {
             // Step 1: Insert the product
             const id = `product_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -245,12 +268,14 @@ export const productService = {
             }
 
             // Step 3: Create Cooking Tips
-            if (productData.cookingTips && productData.cookingTips.length > 0) {
+            const cookingTips =
+                productData.cookingTips ?? productData.details?.cookingTips;
+            if (cookingTips && cookingTips.length > 0) {
                 const { error: cookingError } = await supabase
                     .from('cooking_tips')
                     .insert(
-                        productData.cookingTips.map(tip => ({
-                            tip: typeof tip === 'string' ? tip : tip.tip,
+                        cookingTips.map(tip => ({
+                            tip,
                             product_id: product.id,
                         }))
                     );
@@ -261,12 +286,14 @@ export const productService = {
             }
 
             // Step 4: Create Nutritional Info
-            if (productData.nutritionalInfo && productData.nutritionalInfo.length > 0) {
+            const nutritionalInfo =
+                productData.nutritionalInfo ?? productData.details?.nutritionalInfo;
+            if (nutritionalInfo && nutritionalInfo.length > 0) {
                 const { error: nutritionError } = await supabase
                     .from('nutritional_info')
                     .insert(
-                        productData.nutritionalInfo.map(info => ({
-                            info: typeof info === 'string' ? info : info.info,
+                        nutritionalInfo.map(info => ({
+                            info,
                             product_id: product.id,
                         }))
                     );
@@ -303,10 +330,10 @@ export const productService = {
     },
 
     // UPDATE PRODUCT
-    async updateProduct(id: string, productData: Partial<Product>): Promise<Product | null> {
+    async updateProduct(id: string, productData: ProductEditorInput): Promise<Product | null> {
         try {
             // Step 1: Prepare update data
-            const updateData: any = {
+            const updateData: Record<string, unknown> = {
                 name: productData.name,
                 category: productData.category,
                 price: productData.price,
@@ -329,11 +356,11 @@ export const productService = {
             });
 
             // Step 2: Update the product
-            const { data: product, error: productError } = await supabase
+            const { error: productError } = await supabase
                 .from('products')
                 .update(updateData)
                 .eq('id', id)
-                .select()
+                .select('id')
                 .single();
 
             if (productError) {
@@ -366,15 +393,17 @@ export const productService = {
             }
 
             // Step 4: Update Cooking Tips
-            if (productData.cookingTips !== undefined) {
+            const cookingTips =
+                productData.cookingTips ?? productData.details?.cookingTips;
+            if (cookingTips !== undefined) {
                 await supabase.from('cooking_tips').delete().eq('product_id', id);
                 
-                if (productData.cookingTips.length > 0) {
+                if (cookingTips.length > 0) {
                     const { error: cookingError } = await supabase
                         .from('cooking_tips')
                         .insert(
-                            productData.cookingTips.map(tip => ({
-                                tip: typeof tip === 'string' ? tip : tip.tip,
+                            cookingTips.map(tip => ({
+                                tip,
                                 product_id: id,
                             }))
                         );
@@ -386,15 +415,17 @@ export const productService = {
             }
 
             // Step 5: Update Nutritional Info
-            if (productData.nutritionalInfo !== undefined) {
+            const nutritionalInfo =
+                productData.nutritionalInfo ?? productData.details?.nutritionalInfo;
+            if (nutritionalInfo !== undefined) {
                 await supabase.from('nutritional_info').delete().eq('product_id', id);
                 
-                if (productData.nutritionalInfo.length > 0) {
+                if (nutritionalInfo.length > 0) {
                     const { error: nutritionError } = await supabase
                         .from('nutritional_info')
                         .insert(
-                            productData.nutritionalInfo.map(info => ({
-                                info: typeof info === 'string' ? info : info.info,
+                            nutritionalInfo.map(info => ({
+                                info,
                                 product_id: id,
                             }))
                         );
@@ -467,7 +498,7 @@ export const productService = {
             const fileExt = file.name.split('.').pop();
             const fileName = `${productId}/${Date.now()}.${fileExt}`;
 
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('product-images')
                 .upload(fileName, file);
 

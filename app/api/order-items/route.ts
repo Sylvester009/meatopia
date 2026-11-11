@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+type OrderItemUpdateInput = Partial<{
+  name: string;
+  weight: string;
+  orderId: number;
+  quantity: number;
+  unitPrice: number;
+}>;
+
 // POST - Create a new order item
 export async function POST(request: NextRequest) {
   try {
@@ -171,10 +179,12 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+    const body: OrderItemUpdateInput = await request.json()
     
     // Prepare update data
-    const updateData: any = {}
+    const updateData: OrderItemUpdateInput & { updatedAt: string } = {
+      updatedAt: new Date().toISOString(),
+    };
     
     if (body.name !== undefined) updateData.name = body.name
     if (body.weight !== undefined) updateData.weight = body.weight
@@ -207,8 +217,6 @@ export async function PUT(request: NextRequest) {
       }
       updateData.unitPrice = body.unitPrice
     }
-
-    updateData.updatedAt = new Date().toISOString()
 
     // Update order item in Supabase
     const { data: orderItem, error } = await supabase

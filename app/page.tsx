@@ -3,7 +3,11 @@
 import {useState, useEffect, useMemo, useCallback} from 'react';
 import {useInfiniteScroll} from '@/hooks/useInfiniteScroll';
 import {useSearch} from '@/context/SearchContext';
-import {getProducts, getCategories} from '@/services/productService';
+import {
+  getProducts,
+  getCategories,
+  type GetProductsParams,
+} from '@/services/productService';
 import type {Product} from '@/services/productService';
 import ProductCard from '@/components/productCards';
 
@@ -51,7 +55,7 @@ export default function Home() {
       setError(null);
 
       try {
-        const params: any = {
+        const params: GetProductsParams = {
           limit: 100,
           page: 1,
         };

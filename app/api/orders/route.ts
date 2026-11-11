@@ -1,20 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+type OrderItemInput = {
+  name: string;
+  weight: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+type OrderCreateInput = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  deliveryMethod: string;
+  deliveryLocation: string;
+  totalAmount: number;
+  status?: string;
+  items: OrderItemInput[];
+};
+
+type OrderUpdateInput = Partial<
+  Pick<
+    OrderCreateInput,
+    | 'firstName'
+    | 'lastName'
+    | 'phone'
+    | 'email'
+    | 'address'
+    | 'city'
+    | 'state'
+    | 'deliveryMethod'
+    | 'deliveryLocation'
+    | 'totalAmount'
+    | 'status'
+  >
+>;
+
 // POST - Create a new order with items
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body: OrderCreateInput = await request.json()
     
     // Validate required fields
-    const requiredFields = [
+    const requiredFields: (keyof OrderCreateInput)[] = [
       'firstName', 'lastName', 'phone', 'email', 
       'address', 'city', 'state', 'deliveryMethod', 
       'deliveryLocation', 'totalAmount', 'items'
     ]
     
     for (const field of requiredFields) {
-      if (!body[field] && body[field] !== 0) {
+      if (body[field] === undefined || body[field] === null || body[field] === '') {
         return NextResponse.json(
           { error: `${field} is required` },
           { status: 400 }
@@ -117,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
-    const orderItems = body.items.map((item: any) => ({
+    const orderItems = body.items.map(item => ({
       orderId: order.id,
       name: item.name,
       weight: item.weight,
@@ -241,13 +280,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+    const body: OrderUpdateInput = await request.json()
     
     // Prepare update data
-    const updateData: any = {}
+    const updateData: OrderUpdateInput & { updatedAt: string } = {
+      updatedAt: new Date().toISOString(),
+    };
     
     // String fields
-    const stringFields = [
+    const stringFields: Exclude<keyof OrderUpdateInput, 'totalAmount'>[] = [
       'firstName', 'lastName', 'phone', 'email', 'address', 
       'city', 'state', 'deliveryMethod', 'deliveryLocation', 'status'
     ]
@@ -279,8 +320,6 @@ export async function PUT(request: NextRequest) {
         )
       }
     }
-
-    updateData.updatedAt = new Date().toISOString()
 
     // Update order in Supabase
     const { data: order, error } = await supabase
