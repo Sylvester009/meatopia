@@ -865,7 +865,7 @@ export default function SEOAccessibilityPanel() {
                         OG Image URL
                       </label>
                       <div className="relative">
-                        <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <ImageIcon className="left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                           type="url"
                           value={seoSettings.ogImage}
