@@ -865,7 +865,7 @@ export default function SEOAccessibilityPanel() {
                         OG Image URL
                       </label>
                       <div className="relative">
-                        <ImageIcon className="left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
                           type="url"
                           value={seoSettings.ogImage}
@@ -875,7 +875,7 @@ export default function SEOAccessibilityPanel() {
                           className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                         />
                       </div>
-                      {seoSettings.ogImage && (
+                      {/* {seoSettings.ogImage && (
                         <div className="mt-3 w-full max-w-xs h-32 bg-gray-100 rounded-xl overflow-hidden">
                           <Image
                             src={seoSettings.ogImage}
@@ -883,10 +883,10 @@ export default function SEOAccessibilityPanel() {
                             fill
                             unoptimized
                             sizes="(max-width: 640px) 100vw, 320px"
-                            className="object-cover"
+                            className="object-cover w-full h-auto"
                           />
                         </div>
-                      )}
+                      )} */}
                     </div>
 
                     <div>
