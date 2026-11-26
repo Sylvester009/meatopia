@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import EventsList from '@/components/EventsList';
-import { Event } from '@/lib/events';
+import { getEvents, type Event } from '@/lib/events';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -15,14 +15,7 @@ export default function SpecialEventsPage() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/events');
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
-
-        const result = await response.json();
-        setEvents(result.data || []);
+        setEvents(await getEvents());
       } catch (err) {
         console.error('Error fetching events:', err);
         setError('Unable to load events at this time.');

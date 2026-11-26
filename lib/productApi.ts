@@ -16,7 +16,7 @@ export type ProductApiRow = {
   [key: string]: unknown;
 };
 
-export function normalizeProductApiRow(product: ProductApiRow) {
+export function normalizeProductApiRow<T extends ProductApiRow>(product: T) {
   const weightOptions = (product.weight_options || []).map(option => ({
     ...option,
     image: option.image ? getProductImageUrl(option.image) : null,

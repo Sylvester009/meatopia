@@ -3,30 +3,18 @@
 import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import {Calendar, MessageCircle} from 'lucide-react';
+import {getActiveEventsCount} from '@/lib/events';
 
 export default function FloatingActionButtons() {
   const [eventsCount, setEventsCount] = useState(0);
-  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchEventsCount = async () => {
       try {
-        const response = await fetch('/api/events?isActive=true', {
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
-
-        const result = await response.json();
-        const activeEvents = result.data || [];
-        setEventsCount(activeEvents.length);
+        setEventsCount(await getActiveEventsCount());
       } catch (error) {
         console.error('Failed to fetch events count:', error);
         setEventsCount(0);
-      } finally {
-        setIsLoading(false);
       }
     };
 

@@ -130,25 +130,23 @@ npm install
 
 ### Configure Environment Variables
 
-Create a `.env` file in the project root. The included `.env` contains demo placeholders; replace them with credentials for your own services before using payments, email, Supabase, or the database.
+Configure the root `.env` file with your own service credentials before using payments, email, Supabase, or the database. The values below are demo placeholders only; `.env` is ignored by Git and must be configured separately on each machine.
 
 ```env
-DATABASE_URL=
+DATABASE_URL="postgresql://demo:demo@localhost:5432/meatopia?schema=public"
 
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_SERVICE_KEY=
+NEXT_PUBLIC_SUPABASE_URL="https://demo-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="demo-publishable-key-replace-me"
+SUPABASE_SERVICE_KEY="demo-service-key-replace-me"
 
-PAYSTACK_SECRET_KEY=
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY="pk_test_demo-replace-me"
+PAYSTACK_SECRET_KEY="sk_test_demo-replace-me"
 
-EMAIL_USER=
-EMAIL_PASS=
-BUSINESS_EMAIL=
+EMAIL_USER="demo@example.com"
+EMAIL_PASS="demo-app-password-replace-me"
+BUSINESS_EMAIL="orders@example.com"
 
-NEXT_PUBLIC_WHATSAPP_NUMBER=
+NEXT_PUBLIC_WHATSAPP_NUMBER="2348000000000"
 ```
 
 ### Set up Supabase control-panel storage
