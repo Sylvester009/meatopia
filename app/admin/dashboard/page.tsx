@@ -33,6 +33,7 @@ import AddProductModal from '@/components/admin/AddProductModal';
 import EditProductModal from '@/components/admin/EditProductModal';
 import DeleteProductModal from '@/components/admin/DeleteProductModal';
 import AddEventModal from '@/components/admin/AddEventModal';
+import {getEvents} from '@/lib/events';
 import {toast} from 'sonner';
 
 // Types
@@ -135,14 +136,7 @@ export default function AdminDashboard() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/events');
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
-
-        const result = await response.json();
-        setEvents(result.data || []);
+        setEvents(await getEvents());
       } catch (err) {
         console.error('Error fetching events:', err);
         setError('Unable to load events at this time.');

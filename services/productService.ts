@@ -1,6 +1,5 @@
-import api from '@/lib/axios';
 import { supabase } from '@/lib/supabase';
-import { AxiosResponse } from 'axios';
+import { normalizeProductApiRow } from '@/lib/productApi';
 
 // Types
 export interface Product {
@@ -94,21 +93,62 @@ export interface GetProductsParams {
     sortOrder?: 'asc' | 'desc';
 }
 
+async function getProductsFromSupabase(params?: GetProductsParams): Promise<PaginatedResponse> {
+    const limit = params?.limit || 50;
+    const page = params?.page || 1;
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+    const sortBy = params?.sortBy || 'name';
+    const sortOrder = params?.sortOrder || 'asc';
+
+    let query = supabase
+        .from('products')
+        .select(`
+            *,
+            tags (*),
+            cooking_tips (*),
+            nutritional_info (*),
+            weight_options (*),
+            product_images (*)
+        `, { count: 'exact' });
+
+    if (params?.category && params.category !== 'All Meats') {
+        query = query.eq('category', params.category);
+    }
+
+    if (params?.search) {
+        query = query.or(
+            `name.ilike.%${params.search}%,description.ilike.%${params.search}%,category.ilike.%${params.search}%`,
+        );
+    }
+
+    const { data, error, count } = await query
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .range(start, end);
+
+    if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+    }
+
+    return {
+        products: (data || []).map(product =>
+            normalizeProductApiRow(product),
+        ),
+        pagination: {
+            total: count || 0,
+            page,
+            limit,
+            totalPages: Math.ceil((count || 0) / limit),
+        },
+    };
+}
+
 // Product API Service
 export const productService = {
     // Get all products with pagination and filters
     getProducts: async (params?: GetProductsParams): Promise<PaginatedResponse> => {
-        const response: AxiosResponse<PaginatedResponse> = await api.get('/products', {
-            params: {
-                category: params?.category,
-                limit: params?.limit || 50,
-                page: params?.page || 1,
-                search: params?.search,
-                sortBy: params?.sortBy,
-                sortOrder: params?.sortOrder,
-            },
-        });
-        return response.data;
+        return getProductsFromSupabase(params);
     },
 
     // Get all products directly from Supabase
@@ -167,15 +207,10 @@ export const productService = {
                 return null;
             }
 
-            // Normalize the data
+            const normalizedProduct = normalizeProductApiRow(data);
             return {
-                ...data,
-                discount: data.discount !== undefined ? data.discount : null,
-                weightOptions: data.weight_options || [],
-                cookingTips: data.cooking_tips || [],
-                nutritionalInfo: data.nutritional_info || [],
+                ...normalizedProduct,
                 tags: data.tags || [],
-                images: data.product_images || [],
             };
         } catch (error) {
             console.error('Error in getProductFromSupabase:', error);
@@ -185,38 +220,55 @@ export const productService = {
 
     // Get a single product by ID
     getProduct: async (id: string): Promise<Product> => {
-        const response: AxiosResponse<{ product: Product }> = await api.get(`/products/${id}`);
-        return response.data.product;
+        const product = await productService.getProductFromSupabase(id);
+        if (!product) {
+            throw new Error(`Product not found: ${id}`);
+        }
+        return product;
     },
 
     // Get products by category
     getProductsByCategory: async (category: string, limit?: number): Promise<Product[]> => {
-        const response: AxiosResponse<PaginatedResponse> = await api.get('/products', {
-            params: { category, limit: limit || 20, page: 1 },
+        const response = await getProductsFromSupabase({
+            category,
+            limit: limit || 20,
+            page: 1,
         });
-        return response.data.products;
+        return response.products;
     },
 
     // Search products
     searchProducts: async (query: string, limit?: number): Promise<Product[]> => {
-        const response: AxiosResponse<PaginatedResponse> = await api.get('/products', {
-            params: { search: query, limit: limit || 20, page: 1 },
+        const response = await getProductsFromSupabase({
+            search: query,
+            limit: limit || 20,
+            page: 1,
         });
-        return response.data.products;
+        return response.products;
     },
 
     // Get featured products (using tag filtering)
     getFeaturedProducts: async (limit?: number): Promise<Product[]> => {
-        const response: AxiosResponse<PaginatedResponse> = await api.get('/products', {
-            params: { limit: limit || 6, page: 1 },
+        const response = await getProductsFromSupabase({
+            limit: limit || 6,
+            page: 1,
         });
-        return response.data.products.filter(p => p.tag === 'Popular');
+        return response.products.filter(p => p.tag === 'Popular');
     },
 
     // Get product categories
     getCategories: async (): Promise<string[]> => {
-        const response: AxiosResponse<{ categories: string[] }> = await api.get('/categories');
-        return response.data.categories;
+        const { data, error } = await supabase
+            .from('products')
+            .select('category')
+            .order('category', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching categories:', error);
+            throw error;
+        }
+
+        return [...new Set((data || []).map(product => product.category))];
     },
 
      async createProduct(productData: ProductEditorInput): Promise<Product | null> {
