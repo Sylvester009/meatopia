@@ -1,9 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import { normalizeProductApiRow } from '@/lib/productApi';
+import { slugifyProductName } from '@/lib/productSlug';
 
 // Types
 export interface Product {
     id: string;
+    slug: string;
     name: string;
     category: string;
     price: number;
@@ -91,6 +93,34 @@ export interface GetProductsParams {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+}
+
+async function getUniqueProductSlug(name: string, excludeId?: string): Promise<string> {
+    const baseSlug = slugifyProductName(name);
+    const { data, error } = await supabase
+        .from('products')
+        .select('id, slug')
+        .like('slug', `${baseSlug}%`);
+
+    if (error) {
+        console.error('Error checking product slug availability:', error);
+        throw error;
+    }
+
+    const usedSlugs = new Set(
+        (data || [])
+            .filter(product => product.id !== excludeId)
+            .map(product => product.slug),
+    );
+
+    let slug = baseSlug;
+    let suffix = 2;
+    while (usedSlugs.has(slug)) {
+        slug = `${baseSlug}-${suffix}`;
+        suffix += 1;
+    }
+
+    return slug;
 }
 
 async function getProductsFromSupabase(params?: GetProductsParams): Promise<PaginatedResponse> {
@@ -189,7 +219,7 @@ export const productService = {
 
     async getProductFromSupabase(id: string): Promise<Product | null> {
         try {
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from('products')
                 .select(`
                     *,
@@ -199,11 +229,31 @@ export const productService = {
                     weight_options (*),
                     product_images (*)
                 `)
-                .eq('id', id)
-                .single();
+                .eq('slug', id.toLowerCase())
+                .maybeSingle();
+
+            // Fall back to the database ID so existing product URLs can redirect to their slug.
+            if (!error && !data) {
+                ({ data, error } = await supabase
+                    .from('products')
+                    .select(`
+                        *,
+                        tags (*),
+                        cooking_tips (*),
+                        nutritional_info (*),
+                        weight_options (*),
+                        product_images (*)
+                    `)
+                    .eq('id', id)
+                    .maybeSingle());
+            }
 
             if (error) {
                 console.error('Error fetching product from Supabase:', error);
+                return null;
+            }
+
+            if (!data) {
                 return null;
             }
 
@@ -275,11 +325,13 @@ export const productService = {
         try {
             // Step 1: Insert the product
             const id = `product_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            const slug = await getUniqueProductSlug(productData.name);
             
             const { data: product, error: productError } = await supabase
                 .from('products')
                 .insert({
                     id: id,
+                    slug,
                     name: productData.name,
                     category: productData.category,
                     price: productData.price,
@@ -386,6 +438,7 @@ export const productService = {
         try {
             // Step 1: Prepare update data
             const updateData: Record<string, unknown> = {
+                slug: await getUniqueProductSlug(productData.name, id),
                 name: productData.name,
                 category: productData.category,
                 price: productData.price,

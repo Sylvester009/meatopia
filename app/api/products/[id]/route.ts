@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const { data: product, error } = await supabase
+    let { data: product, error } = await supabase
       .from('products')
       .select(`
         *,
@@ -20,11 +20,33 @@ export async function GET(
         weight_options (*),
         product_images (*)
       `)
-      .eq('id', id)
-      .single();
+      .eq('slug', id.toLowerCase())
+      .maybeSingle();
+
+    if (!error && !product) {
+      ({ data: product, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          tags (*),
+          cooking_tips (*),
+          nutritional_info (*),
+          weight_options (*),
+          product_images (*)
+        `)
+        .eq('id', id)
+        .maybeSingle());
+    }
 
     if (error) {
       console.error('Error fetching product:', error);
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
