@@ -4,11 +4,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
 }
 
 model Product {
   id           String  @id @default(cuid())
+  slug         String  @unique
   name         String
   category     String
   price        Int

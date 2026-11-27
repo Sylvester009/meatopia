@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation';
-import { getProduct } from '@/services/productService';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { getProduct, type Product } from '@/services/productService';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import ProductDetails from '@/components/ProductDetails';
 import Link from 'next/link';
@@ -11,63 +11,64 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
-  
+  let product: Product;
+
   try {
-    const product = await getProduct(id);
-
-    if (!product) {
-      notFound();
-    }
-
-    // Get all images for the gallery
-    const galleryImages = [
-      product.image,
-      ...(product.images?.map(img => img.url) || []),
-      ...(product.weightOptions?.map(opt => opt.image).filter(Boolean) || []),
-    ].filter(Boolean) as string[];
-
-    return (
-      <div className="min-h-screen bg-gray-50/30">
-        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm mb-6 lg:mb-8">
-            <Link
-              href="/"
-              className="text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Shop
-            </Link>
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-500">{product.category}</span>
-            <span className="text-gray-300">/</span>
-            <span className="text-gray-900 font-medium truncate">
-              {product.name}
-            </span>
-          </nav>
-
-          {/* Product Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 bg-white rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8">
-            {/* Image Gallery */}
-            <div className="lg:col-span-1">
-              <ProductImageGallery
-                productName={product.name}
-                tag={product.tag}
-                tagColor={product.tagColor}
-                images={galleryImages}
-              />
-            </div>
-
-            {/* Product Details */}
-            <div className="lg:col-span-1">
-              <ProductDetails product={product} />
-            </div>
-          </div>
-        </main>
-      </div>
-    );
+    product = await getProduct(id);
   } catch (error) {
     console.error('Error fetching product:', error);
     notFound();
   }
+
+  if (product.slug !== id) {
+    permanentRedirect(`/product/${encodeURIComponent(product.slug)}`);
+  }
+
+  // Get all images for the gallery
+  const galleryImages = [
+    product.image,
+    ...(product.images?.map(img => img.url) || []),
+    ...(product.weightOptions?.map(opt => opt.image).filter(Boolean) || []),
+  ].filter(Boolean) as string[];
+
+  return (
+    <div className="min-h-screen bg-gray-50/30">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-2 text-sm mb-6 lg:mb-8">
+          <Link
+            href="/"
+            className="text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Shop
+          </Link>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-500">{product.category}</span>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-900 font-medium truncate">
+            {product.name}
+          </span>
+        </nav>
+
+        {/* Product Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 bg-white rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8">
+          {/* Image Gallery */}
+          <div className="lg:col-span-1">
+            <ProductImageGallery
+              productName={product.name}
+              tag={product.tag}
+              tagColor={product.tagColor}
+              images={galleryImages}
+            />
+          </div>
+
+          {/* Product Details */}
+          <div className="lg:col-span-1">
+            <ProductDetails product={product} />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }

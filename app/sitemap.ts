@@ -38,7 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {persistSession: false, autoRefreshToken: false},
   });
-  const {data, error} = await supabase.from('products').select('id');
+  const {data, error} = await supabase.from('products').select('slug');
 
   if (error) {
     console.error('Unable to add product URLs to sitemap:', error.message);
@@ -46,8 +46,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   return entries.concat(
-    (data || []).map(({id}) => ({
-      url: new URL(`/product/${encodeURIComponent(id)}`, siteOrigin).toString(),
+    (data || []).map(({slug}) => ({
+      url: new URL(`/product/${encodeURIComponent(slug)}`, siteOrigin).toString(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     }))

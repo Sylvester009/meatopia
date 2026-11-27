@@ -1,6 +1,7 @@
 'use client';
 
-import {Product} from '@/services/productService';
+import type {Product} from '@/services/productService';
+import {slugifyProductName} from '@/lib/productSlug';
 import Link from 'next/link';
 import {useCart} from '@/context/CartContext';
 import {useState} from 'react';
@@ -88,7 +89,7 @@ export default function ProductCard({product}: ProductCardProps) {
 
   return (
     <div className="flex flex-col gap-0 bg-white rounded-xl border border-[#e2e8e2] overflow-hidden group hover:shadow-xl transition-all hover:-translate-y-1">
-      <Link href={`/product/${product.id}`}>
+      <Link href={`/product/${product.slug || slugifyProductName(product.name)}`}>
         <div className="relative w-full aspect-4/3 overflow-hidden bg-gray-100">
           {/* Tag Badge */}
           {product.tag && (
